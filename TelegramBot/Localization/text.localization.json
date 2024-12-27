@@ -1,0 +1,44 @@
+{
+    "welcome": {
+        "1_hour_free": {
+            "ru": "Привет этот бот предназнаечн для решения задач студентов. Чтобы получить полный доступ к возможностям бота, приобрети подписку",
+            "en": "Hi, this bot is designed to solve students' problems. To get full access to the bot's features, purchase a subscription"
+        },
+        "no_access": {
+            "ru": "Привет этот бот предназначен для решения задач студентов. У вас ",
+            "en": ""
+        },
+        "with_access": {
+            "ru": "",
+            "en": ""
+        }
+    },
+    "profile": {
+        "ru": "{first_name} {last_name}\n@{username}\n\nТекущая подписка: {localized_name}\n\nОсталось: {days} дней, {hours} часов, {minutes} минут",
+        "en": "{first_name} {last_name}\n@{username}\n\nCurrent subscription: {localized_name}\n\nLeft: {days} days, {hours} hours, {minutes} minutes"
+    },
+    "help": {
+        "ru": "При возникновении вопросов, пишите сюда или ознакомьтесь с FAQ ниже",
+        "en": "yenef"
+    },
+    "instruments": {
+        "ru": "Бот имеет обширный функционал и нацелен решать ваши студентческие задачи. Приступим?",
+        "en": "The bot has extensive functionality and is aimed at solving your student tasks. Shall we start?"
+    },
+    "code_helper": {
+        "ru": "Напиши с чем помочь и приложи свой код. Мой контекст 100к символов",
+        "en": "Tell me what to help with. my context is 100k symbols."
+    },
+    "code_helper_clear_context": {
+        "ru": "История диалога очищена",
+        "en": "Context has cleared"
+    },
+    "subscription_requirements": {
+        "ru": "Бот доступен только после подписки на новостной канал",
+        "en": "The bot is available only after subscribing to the news channel"
+    },
+    "invite_friend_text":{
+        "ru": "Пригласи друга и получишь бесплатный доступ ко всем функциям бота на 1 час\nВаша пригласительная ссылка: <pre>{invite_link}</pre>\n\nЧисло приглашенных пользователей: {invited_count}",
+        "en": "Invite a friend and get free access to all the functions of the bot for 1 hour\nYour invitation link: <pre>{invite_link}</pre>\n\nThe number of invited users: {invited_count}"
+    }
+}

@@ -1,0 +1,136 @@
+{
+    "menu": [
+        {
+            "callback_data": "buy_subscription",
+            "localization": {
+                "ru": "Приобрести подписку",
+                "en": "Buy Subscription"
+            }
+        },
+        {
+            "callback_data": "instruments",
+            "localization": {
+                "ru": "Инструменты",
+                "en": "Services"
+            }
+        },
+        {
+            "callback_data": "my_profile",
+            "localization": {
+                "ru": "Мой профиль",
+                "en": "My profile"
+            }
+        },
+        {
+            "callback_data": "invite_friend",
+            "localization": {
+                "ru": "Реферальная система",
+                "en": "Referal System"
+            }
+        }
+    ],
+    "profile": {},
+    "instruments": [
+        {
+            "callback_data": "code_helper",
+            "localization": {
+                "ru": "Помощь при написании кода 💻",
+                "en": "Help with writing code"
+            }
+        },
+        {
+            "callback_data": "abstract_writer",
+            "localization": {
+                "ru": "Написание рефератов/Эссе 📖",
+                "en": "Abstract writing"
+            }
+        },
+        {
+            "callback_data": "course_work_helper",
+            "localization": {
+                "ru": "Написание курсовых работ 📔",
+                "en": "Course work writing"
+            }
+        },
+        {
+            "callback_data": "photo_issue_helper",
+            "localization": {
+                "ru": "Решение задач по фото📷",
+                "en": "Solving problem on photo"
+            }
+        },
+        {
+            "callback_data": "chart_creator_helper",
+            "localization": {
+                "ru": "Построение графиков📈",
+                "en": "Chart creator "
+            }
+        },
+        {
+            "callback_data": "power_point_helper",
+            "localization": {
+                "ru": "Генерация презентаций 📚",
+                "en": "Presentation creator "
+            }
+        },
+        {
+            "callback_data": "default_mode",
+            "localization": {
+                "ru": "Обычный режим🧑‍🎓",
+                "en": "Default mode "
+            }
+        },
+        {
+            "callback_data": "back_to_menu",
+            "localization": {
+                "ru": "⬅️Назад⬅️",
+                "en": "⬅️Back⬅️"
+            }
+        }
+    ],
+    "clear_context": {
+        "ru": "Очистить историю диалога",
+        "en": "Clear dialogue history"
+    },
+    "link_to_channel": {
+        "ru": "Канал",
+        "en": "Channel"
+    },
+    "did_subscribe": {
+        "ru": "✅Подписался",
+        "en": "✅Done"
+    },
+    "languages": [
+        {
+            "name": "🇷🇺Русский",
+            "lang_data": "ru"
+        },
+        {
+            "name": "🇺🇸English",
+            "lang_data": "en"
+        }
+    ],
+    "actions_with_course_work_plan":[
+        {
+            "callback_data": "genereate_new_plan",
+            "localization": {
+                "ru": "🆕Сгенерировать другой план",
+                "en": "🆕Generate new plan"
+            }
+        },
+        {
+            "callback_data": "add_details_to_plan",
+            "localization": {
+                "ru": "➕Изменить план",
+                "en": "➕Change plan"
+            }
+        },
+        {
+            "callback_data": "create_course_work",
+            "localization": {
+                "ru": "✅Создать курсовую работу",
+                "en": "✅Create Course Work "
+            }
+        }
+    ]
+}

@@ -1,0 +1,13 @@
+{
+    "names":{
+        "week":{
+            "ru":"Подписка на неделю",
+            "en":"week subscription"
+        },
+        "hour":{
+            "ru":"Пробная подписка",
+            "en":"Trial subscription"
+        }
+
+    }
+}
