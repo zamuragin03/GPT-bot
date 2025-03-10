@@ -9,7 +9,7 @@ from States import (FSMUser,
                     FSMAbstracthelper,
                     FSMCourseWorkHelper,
                     FSMRewritingHelper,
-                    FSMEssayhelper, 
+                    FSMEssayhelper,
                     FSMPPTXHelper)
 from aiogram.fsm.context import FSMContext
 from aiogram.filters import *
@@ -21,7 +21,7 @@ from Service import (LocalizationService,
                      DefaultModeGPTService,
                      RewritingGPTService,
                      SubscriptionTypeService,
-                     PromocodeService, 
+                     PromocodeService,
                      CustomFilters)
 
 from aiogram import types
@@ -33,7 +33,8 @@ async def start(message: types.Message, state: FSMContext, ):
 
     if data.get('language'):
         hr_text = LocalizationService.BotTexts.GetHumanReadableLanguage(
-            data['language'])
+            data.get('language', 'ru')
+        )
         await message.answer(
             f'Текущий язык: {hr_text} \nВы можете изменить язык',
             reply_markup=Keyboard.Choose_Language()
@@ -53,7 +54,8 @@ async def start(call: types.CallbackQuery, state: FSMContext, ):
     data = await state.get_data()
     if data.get('language'):
         hr_text = LocalizationService.BotTexts.GetHumanReadableLanguage(
-            data['language'])
+            data.get('language', 'ru')
+        )
         await call.message.answer(
             f'Текущий язык: {hr_text} \nВы можете изменить язык',
             reply_markup=Keyboard.Choose_Language()
@@ -65,7 +67,8 @@ async def start(call: types.CallbackQuery, state: FSMContext, ):
             reply_markup=Keyboard.Choose_Language()
         )
     await state.set_state(FSMUser.choosing_language)
-    
+
+
 @router.callback_query(
     F.data == 'back_to_menu',
     FSMAbstracthelper.choosing_action
@@ -97,8 +100,9 @@ async def start(call: types.CallbackQuery, state: FSMContext, ):
 async def select_language(call: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     await call.message.edit_text(
-        text=LocalizationService.BotTexts.GetInstrumentsText(data['language']),
-        reply_markup=Keyboard.Get_Instruments(call.from_user.id,data['language'])
+        text=LocalizationService.BotTexts.GetInstrumentsText(data.get('language', 'ru')),
+        reply_markup=Keyboard.Get_Instruments(
+            call.from_user.id, data['language'])
     )
     await state.set_state(FSMUser.select_mode)
 
@@ -114,7 +118,8 @@ async def instuments(message: types.Message, state: FSMContext):
     data = await state.get_data()
     await message.answer(
         text=LocalizationService.BotTexts.GetInstrumentsText(data['language']),
-        reply_markup=Keyboard.Get_Instruments(message.from_user.id,data['language'])
+        reply_markup=Keyboard.Get_Instruments(
+            message.from_user.id, data['language'])
     )
     await state.set_state(FSMUser.select_mode)
 # Инструменты и коллбэк на inline кнопки
@@ -255,7 +260,7 @@ async def chart_creator_helper(call: types.CallbackQuery, state: FSMContext):
     FSMUser.select_mode,
     F.data == 'essay_helper',
     CustomFilters.gptTypeFilter('essay_helper')
-    
+
 )
 async def chart_creator_helper(call: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
@@ -273,7 +278,7 @@ async def chart_creator_helper(call: types.CallbackQuery, state: FSMContext):
     FSMUser.select_mode,
     F.data == 'course_work_helper',
     CustomFilters.gptTypeFilter('course_work_helper')
-    
+
 )
 async def chart_creator_helper(call: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
