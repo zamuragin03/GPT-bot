@@ -3,6 +3,11 @@ from api.models import *
 from rest_framework import serializers
 
 
+class AdminTelegramUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AdminTelegramUser
+        fields = '__all__'
+        
 class TelegramUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = TelegramUser
@@ -32,4 +37,9 @@ class UserSubscriptionFullSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UserSubscription
+        fields = '__all__'
+
+class PaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Payment
         fields = '__all__'

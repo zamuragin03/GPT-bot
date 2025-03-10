@@ -1,0 +1,9 @@
+{"python.autoComplete.extraPaths": [],
+"python.analysis.autoSearchPaths": false,
+"python.analysis.stubPath": "",
+"python.analysis.diagnosticMode": "openFilesOnly",
+"python.analysis.exclude": [
+    "**/site-packages/tkinter/**"
+],
+"python.languageServer": "None"
+}

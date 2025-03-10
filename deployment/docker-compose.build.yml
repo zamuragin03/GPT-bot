@@ -1,13 +1,39 @@
-version: '3.8'
+version: "3"
 
 services:
-  redis:
-    image: 'redis:latest'
-    container_name: 'redis'
-    ports:
-      - '6379:6379'
+  backend:
+    build: 
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: bot
+    restart: always
+    networks:
+      - server
     volumes:
-      - redis_data:/data
+      - logging:/app/DB_volume
+      - users_backup:/app/Users_Files
+      - users_result_backup:/app/Users_Sent_Files
+
+  bot:
+    build: 
+      context: ../TelegramBot
+      dockerfile: Dockerfile
+    container_name: bot-backend
+    restart: always
+    volumes:
+      - db_backup:/app/db
+    ports:
+      - 80:80
+    networks:
+      - server
+    depends_on:
+      - backend
+
 
 volumes:
-  redis_data:
+  logging:
+  users_backup:
+  users_result_backup:
+  db_backup:
+networks:
+  server:

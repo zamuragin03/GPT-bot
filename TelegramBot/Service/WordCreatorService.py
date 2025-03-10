@@ -2,11 +2,10 @@ from docx import Document
 from docx.shared import Pt, RGBColor, Cm
 import re
 from docx.oxml.ns import qn
-from docx.shared import Pt, RGBColor
 from docx.oxml import OxmlElement
 
 
-class GOSTWordDocument:
+class GOSTWordBaseDocument:
     def __init__(self, data):
         self.data = data
         self.doc = Document()
@@ -72,6 +71,7 @@ class GOSTWordDocument:
         run.font.size = Pt(12)
 
     def add_heading(self, text, level):
+        self.doc.add_paragraph()
         h = self.doc.add_heading(level=level)
         h.alignment = 1  # Выравнивание по ширине
         run = h.add_run(text.upper() if level == 1 else text)
@@ -80,28 +80,6 @@ class GOSTWordDocument:
         run.font.color.rgb = RGBColor(0, 0, 0)
         run.bold = False
         self.doc.add_paragraph()
-
-    def add_references(self, references):
-        # Добавление заголовка для списка литературы
-        self.add_heading("Список используемой литературы", level=1)
-
-        # Добавление нумерованного списка
-        for ref in references:
-            # Удаление существующей нумерации в начале строки
-            clean_ref = re.sub(r'^\d+\.\s+', '', ref)
-            p = self.doc.add_paragraph(clean_ref, style='List Number')
-            p.alignment = 3
-            p_format = p.paragraph_format
-            p_format.first_line_indent = Pt(1.25 * 28.35)
-
-            p_format.line_spacing = 1.5
-            p_format.space_after = 0
-            p_format.left_indent = 0
-            p_format.right_indent = 0
-            p_format.space_before = 0
-            run = p.runs[0]
-            run.font.name = 'Times New Roman'
-            run.font.size = Pt(12)
 
     def add_watermark(self, text):
         self.doc.add_page_break()
@@ -112,6 +90,30 @@ class GOSTWordDocument:
         run.font.size = Pt(45)
         run.font.color.rgb = RGBColor(0, 0, 0)
 
+    def create_document(self):
+        for item in self.data:
+            for content in item['content']:
+                if content['type'] == 'text':
+                    parts = self.parse_html_content(content['text'])
+                    for part in parts:
+                        if '<h1>' in part:
+                            self.add_heading(part.replace(
+                                '<h1>', '').replace('</h1>', ''), level=1)
+                        elif '<h2>' in part:
+                            self.add_heading(part.replace(
+                                '<h2>', '').replace('</h2>', ''), level=2)
+                        elif '<p>' in part:
+                            clean_text = part.replace(
+                                '<p>', '').replace('</p>', '')
+                            self.add_paragraph(clean_text)
+        return self.doc
+
+    def save_document(self, filename):
+        self.add_watermark('Сделано с помощью @student_helpergpt_bot')
+        self.doc.save(filename)
+
+
+class GOSTWordDocument(GOSTWordBaseDocument):
     def create_document(self):
         for index, item in enumerate(self.data):
             for content in item['content']:
@@ -136,6 +138,45 @@ class GOSTWordDocument:
 
         return self.doc
 
-    def save_document(self, filename):
-        self.add_watermark('Сделано с помощью @student_helpergpt_bot')
-        self.doc.save(filename)
+    def add_references(self, references):
+        # Добавление заголовка для списка литературы
+        self.add_heading("Список используемой литературы", level=1)
+
+        # Добавление нумерованного списка
+        for ref in references:
+            # Удаление существующей нумерации в начале строки
+            clean_ref = re.sub(r'^\d+\.\s+', '', ref)
+            p = self.doc.add_paragraph(clean_ref, style='List Number')
+            p.alignment = 3
+            p_format = p.paragraph_format
+            p_format.first_line_indent = Pt(1.25 * 28.35)
+
+            p_format.line_spacing = 1.5
+            p_format.space_after = 0
+            p_format.left_indent = 0
+            p_format.right_indent = 0
+            p_format.space_before = 0
+            run = p.runs[0]
+            run.font.name = 'Times New Roman'
+            run.font.size = Pt(12)
+
+
+class GOSTWordEssayDocument(GOSTWordBaseDocument):
+    def create_document(self):
+        for item in self.data:
+            for content in item['content']:
+                if content['type'] == 'text':
+                    parts = self.parse_html_content(content['text'])
+                    for part in parts:
+                        if '<h1>' in part:
+                            self.add_heading(part.replace(
+                                '<h1>', '').replace('</h1>', ''), level=1)
+                        elif '<h2>' in part:
+                            self.add_heading(part.replace(
+                                '<h2>', '').replace('</h2>', ''), level=2)
+                        elif '<p>' in part:
+                            clean_text = part.replace(
+                                '<p>', '').replace('</p>', '')
+                            self.add_paragraph(clean_text)
+
+        return self.doc

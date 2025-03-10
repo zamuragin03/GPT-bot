@@ -1,6 +1,8 @@
 
-from Config import dp, bot, router, PATH_TO_TEMP_FILES
+import asyncio
+from Config import dp, bot, gpt_router, PATH_TO_TEMP_FILES, GROUP_LINK_URL
 from Keyboards.keyboards import Keyboard
+from Keyboards import Callbacks
 from aiogram import F
 from States import FSMAdmin, FSMAbstracthelper
 from aiogram.fsm.context import FSMContext
@@ -9,36 +11,230 @@ from aiogram.types import FSInputFile
 from aiogram.enums.parse_mode import ParseMode
 from aiogram.enums.content_type import ContentType
 from aiogram import types
-from Service import CustomFilters
-from Service.BotService import BotService
-from Service.GPTService import AbstractWriterGPTService
-from Service import GOSTWordDocument
+from Service import LocalizationService, BotService, AbstractWorkGPTService, GOSTWordDocument, CustomFilters
 
 
-@router.message(
+@gpt_router.callback_query(
+    FSMAbstracthelper.choosing_action,
+    F.data == 'abstract_writer',
+    CustomFilters.gptTypeFilter('abstract_writer')
+)
+async def StatWriting(call: types.CallbackQuery, state: FSMContext, ):
+    data = await state.get_data()
+    abstarct_topic_request_text = LocalizationService.BotTexts.GetAbstractHelperText(
+        data.get('language', 'ru'))
+    await call.message.answer(
+        abstarct_topic_request_text,
+    )
+    await state.set_state(FSMAbstracthelper.typing_topic)
+
+
+@gpt_router.message(
     FSMAbstracthelper.typing_topic,
-    CustomFilters.SubscriberUser()
 )
 async def handleRequestAbstract(message: types.Message, state: FSMContext):
-    thinking_message = await message.answer("Генерирую ответ...")
-    await bot.send_chat_action(message.chat.id, action="typing")
-    topic = message.text
-    abstract_gpt = AbstractWriterGPTService(
-        topic=topic, external_id=message.from_user.id)
-    result = await abstract_gpt.get_abstract()
+    data = await state.get_data()
+    await state.update_data(topic=message.text)
+    number_of_pages_text = LocalizationService.BotTexts.SelectNumberOfPages(
+        data.get('language', 'ru'))
+    await message.answer(
+        number_of_pages_text,
+        reply_markup=Keyboard.NumberOfPages([10, 13, 15, 18, 20])
+    )
+    await state.set_state(FSMAbstracthelper.selecting_pages_number)
+
+
+@gpt_router.callback_query(
+    Callbacks.page_number_callback.filter(),
+    FSMAbstracthelper.selecting_pages_number
+)
+async def SelectPageumber(call: types.CallbackQuery, state: FSMContext, callback_data: Callbacks.page_number_callback):
+    data = await state.get_data()
+    await state.update_data(page_number=callback_data.page_number)
+    select_generation_mode = LocalizationService.BotTexts.SelectGenerationMode(
+        data.get('language', 'ru'))
+    await call.message.answer(
+        select_generation_mode,
+        reply_markup=Keyboard.PlanType(data.get('language', 'ru'))
+    )
+    await state.set_state(FSMAbstracthelper.choosing_plan_generation)
+
+
+@gpt_router.callback_query(
+    F.data == 'set_plan',
+    FSMAbstracthelper.choosing_plan_generation
+)
+async def set_plan(call: types.CallbackQuery, state: FSMContext,):
+    data = await state.get_data()
+    manual_plan = LocalizationService.BotTexts.GetAbstractManualPlan(
+        data['language'])
+    await call.message.edit_text(manual_plan,)
+    await state.set_state(FSMAbstracthelper.typing_manual_plan)
+
+
+@gpt_router.message(
+    FSMAbstracthelper.typing_manual_plan
+)
+async def retrieving_manual_plan(message: types.Message, state: FSMContext,):
+    user_text = message.text
+    data = await state.get_data()
+    thinking_message = await message.answer(LocalizationService.BotTexts.CreatingPlanMessage(data['language']))
+    abstract_service = data.get('abstract_service')
+
+    if not abstract_service:
+        abstract_service = AbstractWorkGPTService(
+            external_id=message.from_user.id,
+            topic=data['topic'],
+            page_number=data['page_number'])
+        await state.update_data(abstract_service=abstract_service)
+    abstract_service.generate_plan_with_user_detail(user_text)
+    plan = await abstract_service.get_plan_response()
+    parsed_plan = BotService.parse_work_plan(plan)
+    await message.answer(
+        LocalizationService.BotTexts.GetPlanScheme(data['language']),
+    )
+    await message.answer(
+        parsed_plan,
+        reply_markup=Keyboard.ActionsWithDonePlan(data['language'],),
+        parse_mode=ParseMode.HTML
+    )
+    await state.set_state(FSMAbstracthelper.choosing_action_with_plan)
+    await bot.delete_message(chat_id=message.chat.id, message_id=thinking_message.message_id)
+
+
+@gpt_router.callback_query(
+    F.data == 'auto_plan',
+    FSMAbstracthelper.choosing_plan_generation
+)
+async def auto_plan(call: types.CallbackQuery, state: FSMContext,):
+    thinking_message = await call.message.answer(LocalizationService.BotTexts.CreatingPlanMessage(data['language']))
+    await bot.send_chat_action(call.message.chat.id, action="typing")
+
+    data = await state.get_data()
+    abstract_service = data.get('abstract_service')
+
+    abstract_service = AbstractWorkGPTService(
+        external_id=call.from_user.id,
+        topic=data['topic'],
+        page_number=data['page_number'])
+    await state.update_data(abstract_service=abstract_service)
+
+    abstract_service.get_initial_plan()
+    plan = await abstract_service.get_plan_response()
+    parsed_plan = BotService.parse_work_plan(plan)
+    await call.message.answer(LocalizationService.BotTexts.GetPlanScheme(data['language']))
+
+    await call.message.answer(
+        parsed_plan,
+        reply_markup=Keyboard.ActionsWithDonePlan(data['language'],),
+        parse_mode=ParseMode.HTML
+    )
+    await state.set_state(FSMAbstracthelper.choosing_action_with_plan)
+    await bot.delete_message(chat_id=call.message.chat.id, message_id=thinking_message.message_id)
+
+
+@gpt_router.callback_query(
+    F.data == 'genereate_new_plan',
+    FSMAbstracthelper.choosing_action_with_plan
+)
+async def handleRequestAbstract(call: types.CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    abstract_service: AbstractWorkGPTService = data.get('abstract_service')
+
+    if not abstract_service.is_retries_allowed():
+        await call.answer(
+            LocalizationService.BotTexts.RegenerationLimitExceded(
+                data['language']),
+            show_alert=True
+        )
+        return
+
+    await call.message.edit_text(LocalizationService.BotTexts.CreatingPlanMessage(data['language']))
+    await bot.send_chat_action(call.message.chat.id, action="typing")
+    abstract_service.regenerate_plan()
+    plan = await abstract_service.get_plan_response()
+
+    parsed_plan = BotService.parse_work_plan(plan)
+    await call.message.answer(
+        parsed_plan,
+        reply_markup=Keyboard.ActionsWithDonePlan(data['language']),
+        parse_mode=ParseMode.HTML
+    )
+    await state.set_state(FSMAbstracthelper.choosing_action_with_plan)
+
+
+@gpt_router.callback_query(
+    F.data == 'confirm_plan',
+    FSMAbstracthelper.choosing_action_with_plan
+)
+async def handleRequestAbstract(call: types.CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    confirm_plan_text = LocalizationService.BotTexts.GetConfirmPlanText(
+        data['language'])
+    await call.message.answer(
+        confirm_plan_text,
+        reply_markup=Keyboard.GetConfirmationActions(data['language'])
+    )
+    await state.set_state(FSMAbstracthelper.proceed_action)
+
+
+@gpt_router.callback_query(
+    F.data == 'proceed_generation',
+    FSMAbstracthelper.proceed_action
+)
+async def handleRequestAbstract(call: types.CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    typing_text = LocalizationService.BotTexts.GenerationTextByWorkType(
+        data['language'], 'abstract', 'start')
+    demand_minutes, demand_seconds = 1, 10
+    finish_text = LocalizationService.BotTexts.GenerationTextByWorkType(
+        data['language'], 'abstract', 'finish')
+    countdown_message = await call.message.answer(typing_text.format(
+        minutes=demand_minutes,
+        seconds=demand_seconds,
+        url=GROUP_LINK_URL
+    ), parse_mode=ParseMode.HTML)
+    countdown_task = asyncio.create_task(
+        BotService.countdown(call=None,
+                             countdown_message=countdown_message,
+                             duration=demand_minutes*60+demand_seconds,
+                             interval=1,
+                             new_text=typing_text,
+                             finish_text=finish_text)
+    )
+    data = await state.get_data()
+    abstract_service: AbstractWorkGPTService = data.get('abstract_service')
+    result = await abstract_service.build_abstract_work()
+    countdown_task.cancel()
+    try:
+        await countdown_message.delete()
+    except Exception as e:
+        pass
+
     doc_creator = GOSTWordDocument(result)
-    
     doc_creator.create_document()
-    end_path = PATH_TO_TEMP_FILES.joinpath(str(message.from_user.id)).joinpath(
-        f'Рефрерат_{topic}_{message.message_id}.docx')
+    end_path = PATH_TO_TEMP_FILES.joinpath(str(call.from_user.id)).joinpath(
+        f'abstract_{data["topic"][:25]}_{call.message.message_id}.docx')
     end_path.parent.mkdir(parents=True, exist_ok=True)
     doc_creator.save_document(end_path)
-
-    await message.answer_document(
+    done_work_text = LocalizationService.BotTexts.DoneWorkText(
+        data.get('language', 'ru'))
+    # TODO СБРАСЫВАТЬ ДАННЫЕ ПОСЛЕ КАЖДОЙ ГЕНЕРАЦИИ, ПОТОМУ ЧТО ТАМ БЕРЕТСЯ ИЗ ЛОКАЛ СТОРЕЙДЖА
+    await call.message.answer_document(
         FSInputFile(end_path),
-        caption='Ваш готовый реферат:)\nДанная версия не является конечной и требует доработок.\n\n\nНе забудьте добавить титульный лист и оглавление'
+        caption=done_work_text,
     )
-    try:
-        await bot.delete_message(chat_id=message.chat.id, message_id=thinking_message.message_id)
-    except:
-        pass
+
+
+@gpt_router.callback_query(
+    F.data == 'cancel_generation',
+    FSMAbstracthelper.proceed_action
+)
+async def cancel_creating(call: types.CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    cancellation_text = LocalizationService.BotTexts.GetCancellationText(
+        data['language'])
+    await call.message.answer(
+        cancellation_text,
+        reply_markup=Keyboard.Get_Back_Button(data['language'])
+    )

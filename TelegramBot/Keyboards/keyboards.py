@@ -1,24 +1,11 @@
+from Config import GROUP_LINK_URL, SUBSCRIPTION_LIMITATIONS, DAILY_LIMITATIONS
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
-from aiogram.filters.callback_data import CallbackData
-from Service import LocalizationService
-
+from Service import LocalizationService, TelegramUserSubscriptionService
+from .Callbacks import Callbacks
+from .KeyboardService import KeyboardService
 KeybardText = LocalizationService.KeyboardTexts
-
-
-class deposit_callback(CallbackData, prefix="deposit_type"):
-    deposit_method: str
-    deposit_name: str
-
-
-class deposit_callback(CallbackData, prefix="deposit_type"):
-    deposit_method: str
-    deposit_name: str
-
-
-class get_subscription_callback(CallbackData, prefix="get_subscription"):
-    duration: int
-    price: float
 
 
 class Keyboard:
@@ -27,34 +14,96 @@ class Keyboard:
         return ReplyKeyboardRemove()
 
     @staticmethod
+    def Get_Admin_Menu():
+        markup = ReplyKeyboardMarkup(
+            keyboard=[
+                [
+                    KeyboardButton(
+                        text='Статистика'),
+                ],
+                [
+                    KeyboardButton(
+                        text='Массовая рассылка'),
+                ],
+
+            ], one_time_keyboard=True, resize_keyboard=True
+        )
+        return markup
+
+    @staticmethod
+    def GetMassMessageConfirmationKeyboard():
+        keyboard = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text="Подтвердить", callback_data="confirm_mass_message"),
+                    InlineKeyboardButton(
+                        text="Отклонить", callback_data="decline_mass_message"),
+                ]
+            ]
+        )
+        return keyboard
+
+    @staticmethod
     def Get_Menu(selected_language):
         menu = KeybardText.GetMenu()
         markup = ReplyKeyboardMarkup(
             keyboard=[
                 [
-                    KeyboardButton(text=menu[0]['localization'][selected_language]),
+                    KeyboardButton(
+                        text=menu[0]['localization'][selected_language]),
                 ],
                 [
-                    KeyboardButton(text=menu[1]['localization'][selected_language]),
+                    KeyboardButton(
+                        text=menu[1]['localization'][selected_language]),
                 ],
                 [
-                    KeyboardButton(text=menu[2]['localization'][selected_language]),
-                    KeyboardButton(text=menu[3]['localization'][selected_language])
+                    KeyboardButton(
+                        text=menu[2]['localization'][selected_language]),
+                    KeyboardButton(
+                        text=menu[3]['localization'][selected_language])
                 ],
             ],
             resize_keyboard=True,
+            one_time_keyboard=True
         )
         return markup
 
     @staticmethod
-    def Get_Instruments(selected_language):
+    def Get_Instruments(external_id, selected_language):
         all_instruments = KeybardText.GetAllInstruments()
-        markup = InlineKeyboardMarkup(inline_keyboard=[
-            [
-                InlineKeyboardButton(
-                    text=el['localization'][selected_language], callback_data=el['callback_data']),
-            ] for el in all_instruments
-        ])
+        subscription = TelegramUserSubscriptionService.GetUserActiveSubscription(
+            external_id)
+
+        if subscription:
+            # Пользователь с активной подпиской
+            limitation_object = TelegramUserSubscriptionService.GetUserLimitations(
+                external_id)
+            limits = SUBSCRIPTION_LIMITATIONS
+        else:
+            # Пользователь без активной подписки
+            limitation_object = TelegramUserSubscriptionService.GetUserDailyLimitations(
+                external_id)
+            limits = DAILY_LIMITATIONS
+
+        limitation = limitation_object.get('limitations')
+        kbs = []
+
+        for el in all_instruments:
+            helper_type = el['callback_data']
+            try:
+                if KeyboardService.check_limits(limitation, helper_type, limits):
+                    kbs.append(KeyboardService.create_button(
+                        el, selected_language, locked=None))
+                else:
+                    kbs.append(KeyboardService.create_button(
+                        el, selected_language, locked=True))
+            except KeyError:
+                # Если тип действия отсутствует в лимитах
+                kbs.append(KeyboardService.create_button(
+                    el, selected_language, locked=None))
+
+        markup = InlineKeyboardMarkup(inline_keyboard=kbs)
         return markup
 
     @staticmethod
@@ -78,12 +127,60 @@ class Keyboard:
         return markup
 
     @staticmethod
+    def GetPresentationButtons(selected_language):
+        markup = InlineKeyboardMarkup(inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text=el['localization'][selected_language], callback_data=el['callback_data'])
+            ] for el in KeybardText.GetPresentationButtons()
+        ])
+        return markup
+
+    @staticmethod
+    def Pptx_actions_kb(selected_language):
+        actions = LocalizationService.KeyboardTexts.GetPresentationOptionsButtons()
+        inline_keyboard = [InlineKeyboardButton(
+            text=el['localization'][selected_language], callback_data=el['callback_data']) for el in actions]
+        markup = InlineKeyboardMarkup(inline_keyboard=[
+            inline_keyboard[i:i+2] for i in range(0, len(inline_keyboard), 2)])
+
+        return markup
+
+    @staticmethod
+    def Code_helper_buttons(selected_language):
+        actions = KeybardText.GetCodeHelperActions()
+        markup = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text=actions[0]['localization'][selected_language], callback_data=actions[0]['callback_data']
+                    ),
+                    InlineKeyboardButton(
+                        text=actions[1]['localization'][selected_language], callback_data=actions[1]['callback_data']
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        text=actions[2]['localization'][selected_language], callback_data=actions[2]['callback_data']
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        text=actions[3]['localization'][selected_language], callback_data=actions[3]['callback_data']
+                    ),
+                ],
+
+            ]
+        )
+        return markup
+
+    @staticmethod
     def Get_Link_To_Channel(selected_language):
         markup = InlineKeyboardMarkup(
             inline_keyboard=[
                 [
                     InlineKeyboardButton(
-                        text=KeybardText.GetSubscribeButton(selected_language), callback_data='_', url='https://t.me/student_helper_news'),
+                        text=KeybardText.GetSubscribeButton(selected_language), callback_data='_', url=GROUP_LINK_URL),
 
                 ],
                 [
@@ -99,13 +196,81 @@ class Keyboard:
     @staticmethod
     def Get_Invitation_Link(selected_language, invitation_link, ):
         back_button = KeybardText.GetBackButton()
+        invitation_button = KeybardText.GetInvitationButton(selected_language)
         markup = InlineKeyboardMarkup(
             inline_keyboard=[
                 [
                     InlineKeyboardButton(
-                        text='Отправить другу', callback_data='_', url=invitation_link),
+                        text=invitation_button.get('text'), switch_inline_query=str(invitation_button.get('switch_inline_query')).format(invitation_link=invitation_link)),
+                ],
+                [
+                    InlineKeyboardButton(
+                        text=back_button['localization'][selected_language], callback_data=back_button['callback_data'],),
 
                 ],
+
+            ]
+        )
+        return markup
+
+    def GetPaymentKeyboard(selected_language, payment_link):
+        back_button = KeybardText.GetBackButton()
+
+        markup = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text=KeybardText.GetPayButtonText(selected_language), url=payment_link),
+                ],
+                [
+                    InlineKeyboardButton(
+                        text=back_button['localization'][selected_language], callback_data=back_button['callback_data'],),
+
+                ],
+
+            ]
+        )
+        return markup
+
+    def GetSubscriptionButton(selected_language, subscription_price):
+        sub_button = KeybardText.GetSubscriptionButons()
+        markup = InlineKeyboardMarkup(inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text=str(el['localization'][selected_language]
+                             ).format(price=subscription_price),
+                    callback_data=el['callback_data']) if el['callback_data'] == 'buy'
+                else InlineKeyboardButton(text=el['localization'][selected_language], callback_data=el['callback_data'])
+            ] for el in sub_button
+        ])
+        return markup
+
+    def GetConfirmationActions(selected_language, ):
+        buttons = KeybardText.ConfirmationButtonsWithPlan()
+        markup = InlineKeyboardMarkup(inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text=el['localization'][selected_language], callback_data=el['callback_data']),
+            ] for el in buttons
+        ])
+        return markup
+
+    @staticmethod
+    def Get_My_Profile_button(selected_language):
+        actions = KeybardText.GetMyProfileActions()
+        markup = InlineKeyboardMarkup(inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text=el['localization'][selected_language], callback_data=el['callback_data']),
+            ] for el in actions
+        ])
+        return markup
+
+    @staticmethod
+    def Get_Back_Button(selected_language):
+        back_button = KeybardText.GetBackButton()
+        markup = InlineKeyboardMarkup(
+            inline_keyboard=[
                 [
                     InlineKeyboardButton(
                         text=back_button['localization'][selected_language], callback_data=back_button['callback_data'],),
@@ -129,12 +294,114 @@ class Keyboard:
         return markup
 
     @staticmethod
-    def ActionsWithCourseWorkPlan(selected_language):
-        actions = KeybardText.GetActionsWithCoursePlan()
+    def NumberOfPages(list_of_numbers: list[int]):
+        markup = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=str(
+            el), callback_data=Callbacks.page_number_callback(page_number=int(el)).pack()) for el in list_of_numbers]])
+        return markup
+
+    @staticmethod
+    def PlanType(selected_language):
+        actions = KeybardText.GetPlanActions()
+
+        markup = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text=el['localization'][selected_language],
+                                  callback_data=el['callback_data']) for el in actions]])
+        return markup
+
+    @staticmethod
+    def ActionsWithDonePlan(selected_language):
+        actions = KeybardText.GetActionsWithPlan()
+
+        markup = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text=el['localization'][selected_language],
+                                  callback_data=el['callback_data']) for el in actions]])
+        return markup
+
+    @staticmethod
+    def ActionsWithPlotCreator(selected_language):
+        actions = KeybardText.GetActionsWithChartCreator()
         markup = InlineKeyboardMarkup(inline_keyboard=[
             [
                 InlineKeyboardButton(
                     text=el['localization'][selected_language], callback_data=el['callback_data']),
+            ] for el in actions
+        ])
+        return markup
+
+    @staticmethod
+    def GenerateWorkButton(work_type, selected_language):
+        actions = KeybardText.GetGenerateButtons()
+        back_button = KeybardText.GetBackButton()
+
+        markup = InlineKeyboardMarkup(inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text=actions[work_type]['localization'][selected_language], callback_data=actions[work_type]['callback_data']),
+            ],
+            [
+                InlineKeyboardButton(
+                    text=back_button['localization'][selected_language], callback_data=back_button['callback_data'],),
+
+            ],
+
+        ])
+        return markup
+
+    @staticmethod
+    def GetSlidesCount():
+        builder = InlineKeyboardBuilder()
+
+        # Добавляем 25 кнопок с текстом и callback_data
+        for i in range(1, 26):
+            builder.button(
+                text=f"{i}",
+                callback_data=f"button_{i}"
+            )
+
+        # Группируем кнопки по 5 в ряду
+        builder.adjust(5)
+
+        # Возвращаем готовую клавиатуру
+        return builder.as_markup()
+
+    @staticmethod
+    def GetVerbosityKb(selected_language):
+        actions = KeybardText.GetPPTXVerbosity()
+        markup = InlineKeyboardMarkup(inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text=el['localization'][selected_language],
+                    callback_data=Callbacks.verbosity_callback(
+                        verbosity=str(el['callback_data'])
+                    ).pack())
+            ] for el in actions
+        ])
+        return markup
+
+    @staticmethod
+    def GetToneKb(selected_language):
+        actions = KeybardText.GetPPTXTone()
+        markup = InlineKeyboardMarkup(inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text=el['localization'][selected_language],
+                    callback_data=Callbacks.tone_callback(
+                        tone=str(el['callback_data'])
+                    ).pack())
+            ] for el in actions
+        ])
+        return markup
+
+    @staticmethod
+    def GetFetchImagesKb(selected_language):
+        actions = KeybardText.GetPPTXFetchMode()
+        markup = InlineKeyboardMarkup(inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text=el['localization'][selected_language],
+                    callback_data=Callbacks.fetch_image_callback(
+                        fetch_image=str(el['callback_data'])
+                    ).pack())
             ] for el in actions
         ])
         return markup

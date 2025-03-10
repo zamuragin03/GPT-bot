@@ -1,5 +1,5 @@
-from pyparsing import ParseFatalException
-from Config import dp, bot, router
+import asyncio
+from Config import dp, bot, gpt_router, GROUP_LINK_URL, PATH_TO_DOWNLOADED_FILES
 from Keyboards.keyboards import Keyboard
 from aiogram import F
 from States import FSMAdmin, FSMPhotoProblem
@@ -7,39 +7,54 @@ from aiogram.fsm.context import FSMContext
 from aiogram.filters import *
 from aiogram.enums.parse_mode import ParseMode
 from aiogram import types
-from Service import CustomFilters
-from Service.BotService import BotService
-from Service.GPTService import ChatGPTService, DefaultModeGPTService
+from Service import SolvePhotoGPTService, DefaultModeGPTService, LocalizationService, BotService, CustomFilters
 
 
-@router.message(
+@gpt_router.message(
     FSMPhotoProblem.sending_message,
     F.photo,
-    CustomFilters.SubscriberUser()
+    CustomFilters.gptTypeFilter('photo_issue_helper')
 )
 async def handlePhoto(message: types.Message, state: FSMContext):
-    thinking_message = await message.answer("Генерирую ответ...")
-    await bot.send_chat_action(message.chat.id, action="typing")
+    data = await state.get_data()
 
+    await bot.send_chat_action(message.chat.id, action="typing")
+    typing_text = LocalizationService.BotTexts.GenerationTextByWorkType(
+        data['language'], 'photo_math', 'start')
+    demand_minutes, demand_seconds = 0, 35
+    finish_text = LocalizationService.BotTexts.GenerationTextByWorkType(
+        data['language'], 'photo_math', 'finish')
+    countdown_message = await message.answer(typing_text.format(
+        minutes=demand_minutes,
+        seconds=demand_seconds,
+        url=GROUP_LINK_URL
+    ), parse_mode=ParseMode.HTML)
+    countdown_task = asyncio.create_task(
+        BotService.countdown(call=None,
+                             countdown_message=countdown_message,
+                             duration=demand_minutes*60+demand_seconds,
+                             interval=2,
+                             new_text=typing_text,
+                             finish_text=finish_text)
+    )
     photo = message.photo[-1]
-    photo_path = f'./{photo.file_unique_id}.jpg'
+    photo_folder = PATH_TO_DOWNLOADED_FILES.joinpath(str(message.from_user.id))
+    photo_folder.mkdir(parents=True, exist_ok=True)
+    photo_path = photo_folder.joinpath(f'{photo.file_unique_id}.jpg')
     await message.bot.download(file=message.photo[-1].file_id, destination=photo_path)
     base64_img = BotService.encode_image(photo_path)
     caption = message.caption or ""
-    response_from_gpt = await ChatGPTService.SolvePhotoProblem(caption, base64_img)
-    with open('./code.tex', 'w') as f:
-        f.write(response_from_gpt.code)
+    response_from_gpt = await SolvePhotoGPTService.SolvePhotoProblem(caption, base64_img)
     try:
         image_to_send = BotService.latex_to_image(
             response_from_gpt.code, message.from_user.id)
         await message.answer_photo(
-            caption='Решение вашей задачи',
+            caption='Solution:',
             photo=image_to_send,
             parse_mode=ParseMode.MARKDOWN
         )
     except Exception as e:
-        await message.answer(text='Не получается создать красивый ответ для вас. Отправлю решение текстом')
-        data = await state.get_data()
+        await message.answer(text='trying another way')
         # Проверка наличия объекта code_helper в состоянии
         default_mode_helper = data.get('default_mode_helper')
 
@@ -56,6 +71,10 @@ async def handlePhoto(message: types.Message, state: FSMContext):
                 response,
                 parse_mode=ParseMode.MARKDOWN
             )
-            await bot.delete_message(chat_id=message.chat.id, message_id=thinking_message.message_id)
         except:
             pass
+    countdown_task.cancel()
+    try:
+        await countdown_message.delete()
+    except Exception as e:
+        pass

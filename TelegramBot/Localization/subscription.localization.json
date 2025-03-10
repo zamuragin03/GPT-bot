@@ -7,7 +7,14 @@
         "hour":{
             "ru":"Пробная подписка",
             "en":"Trial subscription"
+        },
+        "inactive":{
+            "ru":"Неактивна",
+            "en":"Inactive"
+        },
+        "lifetime":{
+            "ru":"Пожизненная подписка",
+            "en":"Lifetime subscription"
         }
-
     }
 }

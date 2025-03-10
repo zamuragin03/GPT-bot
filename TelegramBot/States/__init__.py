@@ -1,9 +1,12 @@
+from .FSMAdmin import FSMAdmin
 from .FSMUser import (FSMUser,
                       FSMCodeHelper,
                       FSMChartCreator,
                       FSMPhotoProblem,
                       FSMAbstracthelper,
-                      FSMCourseWorkHelper
+                      FSMCourseWorkHelper,
+                      FSMRewritingHelper,
+                      FSMEssayhelper,
+                      FSMPPTXHelper
                       )
 from .FSMWorker import FSMWorker
-from .FSMAdmin import FSMAdmin

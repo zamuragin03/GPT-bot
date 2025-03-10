@@ -2,6 +2,8 @@ DB_volume/data.db
 DB_volume/debug.log
 *.session
 venv
-Config/config.ini
+Config/*.ini
 Config/basic_promps.py
 Users_Files
+Users_Sent_Files
+*pyc

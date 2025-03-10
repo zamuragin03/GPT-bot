@@ -1,17 +1,10 @@
 {
     "menu": [
         {
-            "callback_data": "buy_subscription",
-            "localization": {
-                "ru": "Приобрести подписку",
-                "en": "Buy Subscription"
-            }
-        },
-        {
             "callback_data": "instruments",
             "localization": {
-                "ru": "Инструменты",
-                "en": "Services"
+                "ru": "Возможности👨‍🎓",
+                "en": "Opportunities👨🎓"
             }
         },
         {
@@ -22,10 +15,17 @@
             }
         },
         {
+            "callback_data": "buy_subscription",
+            "localization": {
+                "ru": "Подписки",
+                "en": "Subscriptions"
+            }
+        },
+        {
             "callback_data": "invite_friend",
             "localization": {
                 "ru": "Реферальная система",
-                "en": "Referal System"
+                "en": "Referral System"
             }
         }
     ],
@@ -41,8 +41,15 @@
         {
             "callback_data": "abstract_writer",
             "localization": {
-                "ru": "Написание рефератов/Эссе 📖",
-                "en": "Abstract writing"
+                "ru": "Написание Рефератов📖",
+                "en": "Writing research Papers📖"
+            }
+        },
+        {
+            "callback_data": "essay_helper",
+            "localization": {
+                "ru": "Написание Эссе 📄",
+                "en": "Writing The Essay 📄"
             }
         },
         {
@@ -53,31 +60,45 @@
             }
         },
         {
+            "callback_data": "rewriting_helper",
+            "localization": {
+                "ru": "Рерайтинг ✏️",
+                "en": "Rewriting ✏️"
+            }
+        },
+        {
+            "callback_data": "antiplagiat_helper",
+            "localization": {
+                "ru": "Антиплагиат 🗳",
+                "en": "Anti-plagiarism 🗳"
+            }
+        },
+        {
             "callback_data": "photo_issue_helper",
             "localization": {
-                "ru": "Решение задач по фото📷",
-                "en": "Solving problem on photo"
+                "ru": "Решение задач и графиков по фото 📷",
+                "en": "Solving problems and graphs based on photos 📷"
             }
         },
         {
             "callback_data": "chart_creator_helper",
             "localization": {
                 "ru": "Построение графиков📈",
-                "en": "Chart creator "
+                "en": "Plotting graphs 📈"
             }
         },
         {
             "callback_data": "power_point_helper",
             "localization": {
-                "ru": "Генерация презентаций 📚",
-                "en": "Presentation creator "
+                "ru": "Генерация презентаций 🏞",
+                "en": "Generating presentations 🏞 "
             }
         },
         {
             "callback_data": "default_mode",
             "localization": {
                 "ru": "Обычный режим🧑‍🎓",
-                "en": "Default mode "
+                "en": "Default mode🧑‍🎓"
             }
         },
         {
@@ -100,6 +121,22 @@
         "ru": "✅Подписался",
         "en": "✅Done"
     },
+    "my_profile": [
+        {
+            "callback_data": "change_language",
+            "localization": {
+                "ru": "Изменить язык",
+                "en": "Change the language "
+            }
+        },
+        {
+            "callback_data": "back_to_menu",
+            "localization": {
+                "ru": "⬅️Назад⬅️",
+                "en": "⬅️Back⬅️"
+            }
+        }
+    ],
     "languages": [
         {
             "name": "🇷🇺Русский",
@@ -110,26 +147,323 @@
             "lang_data": "en"
         }
     ],
-    "actions_with_course_work_plan":[
+    "actions_with_chart_helper": [
+        {
+            "callback_data": "plot_graph",
+            "localization": {
+                "ru": "Построить график",
+                "en": "Plot a graph"
+            }
+        },
+        {
+            "callback_data": "back_to_menu",
+            "localization": {
+                "ru": "⬅️Назад⬅️",
+                "en": "⬅️Back⬅️"
+            }
+        }
+    ],
+    "confirmation_action_with_done_plan": [
+        {
+            "callback_data": "proceed_generation",
+            "localization": {
+                "ru": "Подтвердить",
+                "en": "Confirm"
+            }
+        },
+        {
+            "callback_data": "cancel_generation",
+            "localization": {
+                "ru": "Отменить генерацию",
+                "en": "Cancel generation"
+            }
+        }
+    ],
+    "actions_with_abstract_work_confirm_plan": [
+        {
+            "callback_data": "confirm_plan",
+            "localization": {
+                "ru": "Подтвердить",
+                "en": "Confirm"
+            }
+        },
         {
             "callback_data": "genereate_new_plan",
             "localization": {
-                "ru": "🆕Сгенерировать другой план",
-                "en": "🆕Generate new plan"
+                "ru": "Отменить генерацию",
+                "en": "Cancel generation"
+            }
+        }
+    ],
+    "actions_with_plan": [
+        {
+            "callback_data": "auto_plan",
+            "localization": {
+                "ru": "Автоматический план",
+                "en": "Automatic plan"
             }
         },
         {
-            "callback_data": "add_details_to_plan",
+            "callback_data": "set_plan",
             "localization": {
-                "ru": "➕Изменить план",
-                "en": "➕Change plan"
+                "ru": "Задать план",
+                "en": "Set a plan"
+            }
+        }
+    ],
+    "actions_with_done_plan": [
+        {
+            "callback_data": "regenerate",
+            "localization": {
+                "ru": "Сгенерировать новый",
+                "en": "Generate a new one"
             }
         },
         {
-            "callback_data": "create_course_work",
+            "callback_data": "confirm",
             "localization": {
-                "ru": "✅Создать курсовую работу",
-                "en": "✅Create Course Work "
+                "ru": "Подтвердить",
+                "en": "confirm"
+            }
+        }
+    ],
+    "generate_buttons": {
+        "essay_helper": {
+            "callback_data": "essay_helper",
+            "localization": {
+                "ru": "Сгенерировать Эссе",
+                "en": "Generate an Essay"
+            }
+        },
+        "abstract_writer": {
+            "callback_data": "abstract_writer",
+            "localization": {
+                "ru": "Сгенерировать Реферат",
+                "en": "Generate The paper"
+            }
+        },
+        "course_work_helper": {
+            "callback_data": "course_work_helper",
+            "localization": {
+                "ru": "Сгенерировать Курсовую работу",
+                "en": "Generate a Term Paper"
+            }
+        }
+    },
+    "invite_friend_button": {
+        "ru": {
+            "text": "Поделиться ссылкой🔗",
+            "switch_inline_query": "Ваша персональная пригласительная ссылка: {invitation_link}"
+        },
+        "en": {
+            "text": "Share link🔗",
+            "switch_inline_query": "Your personal invitation link: {invitation_link}"
+        }
+    },
+    "actions_with_subscription": [
+        {
+            "callback_data": "buy",
+            "localization": {
+                "ru": "Ваш Личный помощник - {price} руб",
+                "en": "Your Personal Assistant - {price} rub"
+            }
+        },
+        {
+            "callback_data": "promocode",
+            "localization": {
+                "ru": "🔢 Активировать промокод",
+                "en": "🔢 Activate promo code"
+            }
+        },
+        {
+            "callback_data": "back_to_menu",
+            "localization": {
+                "ru": "⬅️Назад⬅️",
+                "en": "⬅️Back⬅️"
+            }
+        }
+    ],
+    "code_helper_actions": [
+        {
+            "callback_data": "auto_save_on",
+            "localization": {
+                "ru": "Включить автосохранение ✅",
+                "en": "Enable auto-save ✅"
+            }
+        },
+        {
+            "callback_data": "auto_save_off",
+            "localization": {
+                "ru": "Выключить автосохранение ❌",
+                "en": "Turn off auto-save ❌"
+            }
+        },
+        {
+            "callback_data": "clear_context",
+            "localization": {
+                "ru": "Удалить сохраненое 🟥",
+                "en": "Delete saved content 🟥"
+            }
+        },
+        {
+            "callback_data": "back_to_menu",
+            "localization": {
+                "ru": "⬅️Назад⬅️",
+                "en": "⬅️Back⬅️"
+            }
+        }
+    ],
+    "pay_button": {
+        "ru": "💸Оплатить",
+        "en": "💸Pay"
+    },
+    "pptx_actions": [
+        {
+            "callback_data": "generate_presentation",
+            "localization": {
+                "ru": "Cегнерировать презентацию",
+                "en": "Generate presentation"
+            }
+        },
+        {
+            "callback_data": "back_to_menu",
+            "localization": {
+                "ru": "⬅️Назад⬅️",
+                "en": "⬅️Back⬅️"
+            }
+        }
+    ],
+    "choose_verbosity": [
+        {
+            "callback_data": "consise",
+            "localization": {
+                "ru": "Кратко",
+                "en": "Concise"
+            }
+        },
+        {
+            "callback_data": "standard",
+            "localization": {
+                "ru": "Стандартно",
+                "en": "Standard"
+            }
+        },
+        {
+            "callback_data": "text-heavy",
+            "localization": {
+                "ru": "Текстово",
+                "en": "Text-heavy"
+            }
+        }
+    ],
+    "choose_tone": [
+        {
+            "callback_data": "default",
+            "localization": {
+                "ru": "Обычный",
+                "en": "Default"
+            }
+        },
+        {
+            "callback_data": "casual",
+            "localization": {
+                "ru": "Разговорный",
+                "en": "Casual"
+            }
+        },
+        {
+            "callback_data": "professional",
+            "localization": {
+                "ru": "Профессиональный",
+                "en": "Professional"
+            }
+        },
+        {
+            "callback_data": "funny",
+            "localization": {
+                "ru": "Забавный",
+                "en": "Funny"
+            }
+        },
+        {
+            "callback_data": "educational",
+            "localization": {
+                "ru": "Образовательный",
+                "en": "Educational"
+            }
+        },
+        {
+            "callback_data": "sales_pitch",
+            "localization": {
+                "ru": "Продажный",
+                "en": "Sales pitch"
+            }
+        }
+    ],
+    "choose_fetch_images":[
+        {
+            "callback_data":"True",
+            "localization":{
+                "ru":"Картинки из интернета",
+                "en":"Images from the internet"
+            }
+        },
+        {
+            "callback_data":"False",
+            "localization":{
+                "ru":"Сгенерировать нейросетью",
+                "en":"Generated by neural network"
+            }
+        }
+    ],
+    "pptx_options": [
+        {
+            "callback_data": "change_verbosity",
+            "localization": {
+                "ru": "Сменить объем текста",
+                "en": "Change the text volume"
+            }
+        },
+        {
+            "callback_data": "change_language",
+            "localization": {
+                "ru": "Сменить язык",
+                "en": "Change the language"
+            }
+        },
+        {
+            "callback_data": "change_length",
+            "localization": {
+                "ru": "Сменить кол-во слайдов",
+                "en": "Change the number of slides"
+            }
+        },
+        {
+            "callback_data": "change_template",
+            "localization": {
+                "ru": "Сменить шаблон",
+                "en": "Change template"
+            }
+        },
+        {
+            "callback_data": "change_tone",
+            "localization": {
+                "ru": "Изменить тон",
+                "en": "Change tone"
+            }
+        },
+        {
+            "callback_data": "change_fetch_images",
+            "localization": {
+                "ru": "Изменить картинки",
+                "en": "Change pictures"
+            }
+        },
+        {
+            "callback_data": "generate_pptx",
+            "localization": {
+                "ru": "Сгенерировать презентацию",
+                "en": "Generate presentation"
             }
         }
     ]

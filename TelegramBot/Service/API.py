@@ -1,3 +1,4 @@
+import uuid
 import requests
 from Config import PROXY, AUTH_TOKEN
 import json
@@ -22,12 +23,30 @@ class TGUSerApi:
                                      "Authorization": f"Token {AUTH_TOKEN}"},
                             ).json()
 
+    def UpdateTelegramUser(external_id, **kwargs):
+        return requests.patch(PROXY+'update_telegram_user/'+str(external_id), data=kwargs,
+                              headers={"Content-type": "application/json",
+                                       "Authorization": f"Token {AUTH_TOKEN}"},
+                              )
+
+    def GetTelegramUsersReferals(external_id, ):
+        return requests.get(PROXY+'get_telegram_user_referals/'+str(external_id),
+                            headers={"Content-type": "application/json",
+                                     "Authorization": f"Token {AUTH_TOKEN}"},
+                            ).json()
+
+    def GetAllTelegramUsers():
+        return requests.get(PROXY+'get_telegram_users',
+                            headers={"Content-type": "application/json",
+                                     "Authorization": f"Token {AUTH_TOKEN}"},
+                            ).json()
+
 
 class TelegramUserSubscriptionAPI:
     def CreateUserSubscription(external_id, duration):
         return requests.post(PROXY+'create_user_subscription', data=json.dumps({
             "user_external_id": external_id,
-            "subsribe_duration": duration,
+            "subscribe_duration": duration,
         }),
             headers={"Content-type": "application/json",
                      "Authorization": f"Token {AUTH_TOKEN}"},
@@ -40,10 +59,22 @@ class TelegramUserSubscriptionAPI:
                             ).json()
 
     def GetDebtUsers() -> dict:
-        return requests.post(PROXY+'check_trial_users',
+        return requests.post(PROXY+'check_debts',
                              headers={"Content-type": "application/json",
                                       "Authorization": f"Token {AUTH_TOKEN}"},
                              ).json()
+
+    def GetUserLimitations(external_id) -> dict:
+        return requests.get(PROXY+f'check_limits/{external_id}',
+                            headers={"Content-type": "application/json",
+                                     "Authorization": f"Token {AUTH_TOKEN}"},
+                            ).json()
+        
+    def GetUserDailyLimitations(external_id) -> dict:
+        return requests.get(PROXY+f'check_daily_limits/{external_id}',
+                            headers={"Content-type": "application/json",
+                                     "Authorization": f"Token {AUTH_TOKEN}"},
+                            ).json()
 
 
 class UserActionAPI:
@@ -68,3 +99,65 @@ class UserActionAPI:
                              headers={"Content-type": "application/json",
                                       "Authorization": f"Token {AUTH_TOKEN}"},
                              )
+
+
+class SubscriptionTypeAPI:
+    def GetSubscriptionByDuration(duration: int) -> dict:
+        return requests.get(PROXY+'get_subscription/' + str(duration),
+                            headers={"Content-type": "application/json",
+                                     "Authorization": f"Token {AUTH_TOKEN}"},
+                            ).json()
+
+
+class AdminTelegramUserAPI:
+    def GetAllAdmins() -> dict:
+        return requests.get(PROXY+'get_admins',
+                            headers={"Content-type": "application/json",
+                                     "Authorization": f"Token {AUTH_TOKEN}"},
+                            ).json()
+
+    def GetStatistic() -> dict:
+        return requests.get(PROXY+'statistics',
+                            headers={"Content-type": "application/json",
+                                     "Authorization": f"Token {AUTH_TOKEN}"},
+                            ).json()
+
+
+class PromocodeAPI:
+    def ActivatePromocode(
+        external_id: int,
+        promocode_text: uuid
+    ) -> requests.Response:
+        return requests.post(PROXY+'activate_promocode',
+                             data=json.dumps({
+                                 "external_id": external_id,
+                                 "promocode_text": promocode_text,
+
+                             }),
+                             headers={"Content-type": "application/json",
+                                      "Authorization": f"Token {AUTH_TOKEN}"},
+                             )
+
+
+class PaymentAPI:
+    def CreatePayment(
+        external_id: int,
+        order_id: uuid,
+        amount: int
+    ) -> requests.Response:
+        return requests.post(PROXY+'create_paymnet',
+                             data=json.dumps({
+                                 "external_id": external_id,
+                                 "order_id": order_id,
+                                 "amount": amount,
+
+                             }),
+                             headers={"Content-type": "application/json",
+                                      "Authorization": f"Token {AUTH_TOKEN}"},
+                             )
+
+    def UpdatePayment(**kwargs):
+        return requests.patch(PROXY+'update_payment/'+str(kwargs['order_id']), data=kwargs,
+                              headers={
+            "Authorization": f"Token {AUTH_TOKEN}"},
+        )

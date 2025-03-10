@@ -1,23 +1,44 @@
-from Commands import Tasks, SubscriptionMiddleware,CaptchaMiddleWare
+import sys
+from Commands import Tasks, SubscriptionMiddleware, CaptchaMiddleWare, GPTSubscriptionMiddleware, BannedMiddleware, AdminMiddleware
 import logging
-from Config import scheduler, bot, dp, router
+from Config import scheduler, bot, dp, router, gpt_router, admin_router, gpt_free_router
 from pathlib import Path
-
 from aiogram import Dispatcher
 from aiogram.types import BotCommand
 import asyncio
-import logging
 from pathlib import Path
-
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-
-scheduler = AsyncIOScheduler()
 
 
 async def on_startup(dispatcher: Dispatcher):
+    logging.basicConfig(
+        filename=Path(__file__).parent.joinpath(
+            'DB_volume').joinpath("debug.log"),
+        filemode="w",
+        level=logging.DEBUG,
+        encoding='UTF-8',
+        format='%(asctime)s - %(levelname)s - %(message)s',
+    )
+    logging.getLogger('matplotlib.font_manager').disabled = True
+
+    dp.include_router(admin_router)
+    admin_router.message.middleware(AdminMiddleware())
+    admin_router.callback_query.middleware(AdminMiddleware())
+
+    dp.include_router(router)
+    # router.message.middleware(CaptchaMiddleWare())
+    router.message.middleware(SubscriptionMiddleware())
+    router.callback_query.middleware(SubscriptionMiddleware())
+
+    dp.include_router(gpt_router)
+    gpt_router.message.middleware(GPTSubscriptionMiddleware())
+    gpt_router.callback_query.middleware(GPTSubscriptionMiddleware())
+
+    dp.include_router(gpt_free_router)
+
+    dp.message.middleware(BannedMiddleware())
+    dp.callback_query.middleware(BannedMiddleware())
     scheduler.start()
-    scheduler.add_job(Tasks.CheckSubscription, 'interval', minutes=10,
-                      args=(dp,))
+    Tasks()
 
 
 async def on_shutdown(dispatcher: Dispatcher):
@@ -35,17 +56,7 @@ async def main() -> None:
         await bot.delete_webhook(drop_pending_updates=True)
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        filename=Path(__file__).parent.joinpath(
-            'DB_volume').joinpath("debug.log"),
-        filemode="w",
-        level=logging.DEBUG,
-        encoding='UTF-8',
-        format='%(asctime)s - %(levelname)s - %(message)s',
-    )
-    logging.getLogger('matplotlib.font_manager').disabled = True
+    if len(sys.argv)==1:
+        exit('dev or build?')
 
-    dp.include_router(router)
-    router.message.middleware(CaptchaMiddleWare())
-    router.message.middleware(SubscriptionMiddleware())
     asyncio.run(main())

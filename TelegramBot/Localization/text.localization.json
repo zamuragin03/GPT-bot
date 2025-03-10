@@ -1,44 +1,320 @@
 {
-    "welcome": {
-        "1_hour_free": {
-            "ru": "Привет этот бот предназнаечн для решения задач студентов. Чтобы получить полный доступ к возможностям бота, приобрети подписку",
-            "en": "Hi, this bot is designed to solve students' problems. To get full access to the bot's features, purchase a subscription"
-        },
-        "no_access": {
-            "ru": "Привет этот бот предназначен для решения задач студентов. У вас ",
-            "en": ""
-        },
-        "with_access": {
-            "ru": "",
-            "en": ""
-        }
+    "start": {
+        "ru": "Здравствуйте! Ваш академический помощник StudentHelper к вашим услугам.",
+        "en": "Hello! Your academic assistant StudentHelper is at your service."
     },
     "profile": {
-        "ru": "{first_name} {last_name}\n@{username}\n\nТекущая подписка: {localized_name}\n\nОсталось: {days} дней, {hours} часов, {minutes} минут",
-        "en": "{first_name} {last_name}\n@{username}\n\nCurrent subscription: {localized_name}\n\nLeft: {days} days, {hours} hours, {minutes} minutes"
+        "ru": "📊 Мой профиль\n\n👤 Имя: {first_name}\n🆔 ID: {user_id}\n\n💎 Подписка: {localized_name}\n\n🔹 Остаток подписки: {days} дней, {hours} часов, {minutes} минут\n\n❗Ограничения по тарифу❗\n\n1️⃣ Помощник с самой передовой моделью 🧑‍🎓ChatGPT, который ответит вам на любой вопрос - {default_mode} (осталось {default_mode_remain}).\n2️⃣ Помощник при написании 💻Кода на уровне разработчика - {code_helper} (осталось {code_helper_remain}).\n3️⃣ Помощник для написания 📖Рефератов - {abstract_writer} (осталось {abstract_writer_remain}).\n4️⃣ Помощник для написания 📄Эссе - {essay_helper} (осталось {essay_helper_remain}).\n5️⃣ Помощник для написания 📔Курсовых работ - {course_work_helper} (осталось {course_work_helper_remain}).\n6️⃣ Помощник для написания 📗Дипломных работ - {final_paper_helper} (осталось {final_paper_helper_remain}).\n7️⃣ Помощник для проверки в системе 🗳Антиплагиат - {final_paper_helper} (осталось {final_paper_helper_remain}).\n8️⃣ Помощник для ✏️Переписывания текста (Рерайтинга) - {rewriting_helper} (осталось {rewriting_helper_remain}).\n9️⃣ Помощник для решения 📷Сложных математических задач по фото - {photo_issue_helper} (осталось {photo_issue_helper_remain}).\n🔟 Помощник для 📈Построения графиков - {chart_creator_helper} (осталось {chart_creator_helper_remain}).\n1️⃣1️⃣ Помощник для 🏞Генераций презентаций - {power_point_helper} (осталось {power_point_helper_remain}).",
+        "en": "📊 My Profile\n\n👤 Name: {first_name}\n🆔 ID: {user_id}\n\n💎 Subscription: {localized_name}\n\n🔹 Subscription remaining: {days} days, {hours} hours, {minutes} minutes\n\n❗Subscription Plan Limitations❗\n\n1️⃣ Assistant with the most advanced model 🧑‍🎓ChatGPT, which can answer any question - {default_mode} (remaining {default_mode_remain}).\n2️⃣ Assistant for writing 💻Code at developer level - {code_helper} (remaining {code_helper_remain}).\n3️⃣ Assistant for writing 📖Essays - {abstract_writer} (remaining {abstract_writer_remain}).\n4️⃣ Assistant for writing 📄Essays - {essay_helper} (remaining {essay_helper_remain}).\n5️⃣ Assistant for writing 📔Courseworks - {course_work_helper} (remaining {course_work_helper_remain}).\n6️⃣ Assistant for writing 📗Thesis - {final_paper_helper} (remaining {final_paper_helper_remain}).\n7️⃣ Assistant for checking in the 🗳Anti-Plagiarism system - {final_paper_helper} (remaining {final_paper_helper_remain}).\n8️⃣ Assistant for ✏️Rewriting text (Rewriting) - {rewriting_helper} (remaining {rewriting_helper_remain}).\n9️⃣ Assistant for solving 📷Complex math problems via photo - {photo_issue_helper} (remaining {photo_issue_helper_remain}).\n🔟 Assistant for 📈Graphing - {chart_creator_helper} (remaining {chart_creator_helper_remain}).\n1️⃣1️⃣ Assistant for 🏞Generating presentations - {power_point_helper} (remaining {power_point_helper_remain})."
+    },
+    "unlmited_amount": {
+        "ru": "неограничено",
+        "en": "unlimited"
+    },
+    "inactive_subscription": {
+        "ru": "Внимание! Ваша подписка неактивна. 🛑 Для восстановления доступа к боту необходимо ее продлить.",
+        "en": "Attention! Your subscription is inactive. 🛑 To restore access to the bot, you need to renew it."
+    },
+    "subscription_limit_excedeed": {
+        "ru": "Внимание! Количество запросов данного действия превышено для данной подписки",
+        "en": "Attention! The number of requests for this action is exceeded for this subscription"
+    },
+    "daily_limites_excedeed": {
+        "ru": "Внимание! Превышено количество запросов на сегодня",
+        "en": "Attention! The number of requests for today is exceeded"
+    },
+    "access_resctricted": {
+        "ru": "Доступ к боту ограничен",
+        "en": "Access restricted"
     },
     "help": {
         "ru": "При возникновении вопросов, пишите сюда или ознакомьтесь с FAQ ниже",
         "en": "yenef"
     },
+    "creating_plan_message": {
+        "ru": "Создание плана...",
+        "en": "Creating a plan..."
+    },
+    "plan_regeneration_exceded": {
+        "ru": "Превышено количество попыток создания плана",
+        "en": "The number of attempts to create a plan has been exceeded"
+    },
+    "generation_state": {
+        "abstract": {
+            "start": {
+                "ru": "Реферат генерируется !\n\nВремя: {minutes} минут {seconds} секунд...\n\n\nПока можете почитать новости и обновления на нашем <a href='{url}'> канале</a>",
+                "en": "The abstract is being generated!\n\nTime: {minutes} minutes {seconds} seconds...\n\n\nWhile you can read the news and updates on our <a href='{url}'> channel</a>"
+            },
+            "finish": {
+                "ru": "Завершаю написание реферата...",
+                "en": "Finishing writing the abstract..."
+            }
+        },
+        "chart": {
+            "start": {
+                "ru": "График строится !\n\nВремя: {minutes} минут {seconds} секунд...\n\n\nПока можете почитать новости и обновления на нашем <a href='{url}'> канале</a>",
+                "en": "The chart is being plotted!\n\nTime: {minutes} minutes {seconds} seconds...\n\n\nWhile you can read the news and updates on our <a href='{url}'> channel</a>"
+            },
+            "finish": {
+                "ru": "Завершаю построение графика...",
+                "en": "Finishing plotting the chart..."
+            }
+        },
+        "code": {
+            "start": {
+                "ru": "Код генерируется !\n\nВремя: {minutes} минут {seconds} секунд...\n\n\nПока можете почитать новости и обновления на нашем <a href='{url}'> канале</a>",
+                "en": "The code is being generated!\n\nTime: {minutes} minutes {seconds} seconds...\n\n\nWhile you can read the news and updates on our <a href='{url}'> channel</a>"
+            },
+            "finish": {
+                "ru": "Завершаю написание кода...",
+                "en": "Finishing writing the code..."
+            }
+        },
+        "course_work": {
+            "start": {
+                "ru": "Курсовая работа генерируется !\n\nВремя: {minutes} минут {seconds} секунд...\n\n\nПока можете почитать новости и обновления на нашем <a href='{url}'> канале</a>",
+                "en": "The term paper is being generated!\n\nTime: {minutes} minutes {seconds} seconds...\n\n\nWhile you can read the news and updates on our <a href='{url}'> channel</a>"
+            },
+            "finish": {
+                "ru": "Завершаю написание курсовой работы...",
+                "en": "Finishing writing the term paper..."
+            }
+        },
+        "default_mode_photo": {
+            "start": {
+                "ru": "Фото обрабатывается !\n\nВремя: {minutes} минут {seconds} секунд...\n\n\nПока можете почитать новости и обновления на нашем <a href='{url}'> канале</a>",
+                "en": "The photo is being processed!\n\nTime: {minutes} minutes {seconds} seconds...\n\n\nWhile you can read the news and updates on our <a href='{url}'> channel</a>"
+            },
+            "finish": {
+                "ru": "Завершаю обработку фото...",
+                "en": "Finishing processing the photo..."
+            }
+        },
+        "default_mode_text": {
+            "start": {
+                "ru": "Текст обрабатывается !\n\nВремя: {minutes} минут {seconds} секунд...\n\n\nПока можете почитать новости и обновления на нашем <a href='{url}'> канале</a>",
+                "en": "The text is being processed!\n\nTime: {minutes} minutes {seconds} seconds...\n\n\nWhile you can read the news and updates on our <a href='{url}'> channel</a>"
+            },
+            "finish": {
+                "ru": "Завершаю обработку текста...",
+                "en": "Finishing processing the text..."
+            }
+        },
+        "essay": {
+            "start": {
+                "ru": "Эссе генерируется !\n\nВремя: {minutes} минут {seconds} секунд...\n\n\nПока можете почитать новости и обновления на нашем <a href='{url}'> канале</a>",
+                "en": "The essay is being generated!\n\nTime: {minutes} minutes {seconds} seconds...\n\n\nWhile you can read the news and updates on our <a href='{url}'> channel</a>"
+            },
+            "finish": {
+                "ru": "Завершаю написание эссе...",
+                "en": "Finishing writing the essay..."
+            }
+        },
+        "rewriting": {
+            "start": {
+                "ru": "Текст переписывается !\n\nВремя: {minutes} минут {seconds} секунд...\n\n\nПока можете почитать новости и обновления на нашем <a href='{url}'> канале</a>",
+                "en": "The text is being rewritten!\n\nTime: {minutes} minutes {seconds} seconds...\n\n\nWhile you can read the news and updates on our <a href='{url}'> channel</a>"
+            },
+            "finish": {
+                "ru": "Завершаю переписывание текста...",
+                "en": "Finishing rewriting the text..."
+            }
+        },
+        "photo_math": {
+            "start": {
+                "ru": "Фото обрабатывается !\n\nВремя: {minutes} минут {seconds} секунд...\n\n\nПока можете почитать новости и обновления на нашем <a href='{url}'> канале</a>",
+                "en": "The photo is being processed!\n\nTime: {minutes} minutes {seconds} seconds...\n\n\nWhile you can read the news and updates on our <a href='{url}'> channel</a>"
+            },
+            "finish": {
+                "ru": "Завершаю обработку фото...",
+                "en": "Finishing processing the photo..."
+            }
+        }
+    },
+    "subscription_over": {
+        "ru": "Ваша подписка {subsctiprion_name} закончилась. Для продолжения работы с ботом, пожалуйста, продлите подписку.",
+        "en": "Your subscription {subsctiprion_name} has ended. To continue working with the bot, please renew your subscription."
+    },
+    "plan_scheme": {
+        "ru": "Придумал для вашей работы такой план:\n\n• – заголовок 1-го уровня\n•• – заголовок 2-го уровня ",
+        "en": "I came up with such a plan for your work:\n\n• – 1st level heading\n•• – 2nd level heading"
+    },
     "instruments": {
-        "ru": "Бот имеет обширный функционал и нацелен решать ваши студентческие задачи. Приступим?",
-        "en": "The bot has extensive functionality and is aimed at solving your student tasks. Shall we start?"
+        "ru": "Приветствуем вас! Ваш надежный помощник в решении учебных задач — StudentHelper! 📚 Чтобы выбрать режим работы, просто нажмите на кнопки ниже. 😊🔧",
+        "en": "We welcome you! Your reliable assistant in solving learning tasks is StudentHelper! 📚 To select the operating mode, simply click on the buttons below. 😊🔧"
     },
     "code_helper": {
-        "ru": "Напиши с чем помочь и приложи свой код. Мой контекст 100к символов",
-        "en": "Tell me what to help with. my context is 100k symbols."
+        "ru": "Здравствуйте! Вас приветствует StudentHelper, ваш персональный помощник в написании и редактировании кода, рад приветствовать вас.\n\nУважаемый пользователь!\n\nДля оказания эффективной помощи в решении вашей проблемы с кодом, просим предоставить следующую информацию:\n\n• Язык программирования.\n• Цель и функциональность кода.\n• Написанный вами код (даже если он не работает).\n• Описание конкретной проблемы (ошибки, неверный результат).\n• Описания ваших попыток найти решение (результаты поиска).\n\nЯ могу помочь с отладкой, разработкой алгоритмов, оптимизацией кода, объяснением концепций и рекомендацией инструментов.",
+        "en": "Hello! Welcome to StudentHelper, your personal assistant in writing and editing code. I'm glad to assist you.\n\nDear user!\n\nTo provide effective help in solving your code issue, please provide the following information:\n\n• Programming language.\n• Purpose and functionality of the code.\n• The code you have written (even if it does not work).\n• Description of the specific problem (errors, incorrect results).\n• Descriptions of your attempts to find a solution (search results).\n\nI can help with debugging, algorithm development, code optimization, concept explanations, and tool recommendations."
     },
-    "code_helper_clear_context": {
+    "chart_creator_helper": {
+        "ru": "Здравствуйте! Вас приветствует StudentHelper, ваш персональный помощник в построение разного вида  графиков, рад приветствовать вас. Для того, чтобы я мог решить вашу задачу, необходимо нажать кнопку 'Построить график'",
+        "en": "Hello! StudentHelper welcomes you, your personal assistant in building various types of graphs, I am glad to welcome you. In order for me to solve your problem, you need to click the 'Plot a graph' button"
+    },
+    "chart_creator_rules": {
+        "ru": "Напиши какой график построить и я отправлю его тебе.\n\nТы можешь задать функцию и границы по оси х [х от -1 до 1] и по оси y [y от -1 до 1]\n\n📈 Я могу начертить такие графики:\n- график линейной функции (y=a*x+b)\n- график квадратичной функции (y=a*x^2+b*x+c)\n- график кубической функции (y=x^3)\n- график функций-многочленов высоких степеней (y=a*x^3+b*x^2+c*x+d)\n- график функции с корнем (y=sqrt(x))\n- график гиперболы (y=1/x)\n- график показательной функции (y=exp(1)^x)\n- график логарифмической функции (y=log(x))\n- график тригонометрических функций (y=sin(x), y=cos(x), y=tg(x), y=ctg(x))\n- график обратных тригонометрических функций (y=arcsin(x), y=arccos(x), y=arctg(x), y=arcctg(x))\n\n🔻Правила ввода функций:\n1. Все переменные выражаются через x\n2. Все математические операции выражаются через общепринятые символы +, -, *, /, ^\n3. Корень квадратный √¯ ≡ sqrt, степень корня ≡ x^(2/3), (x-1)^(1/3)\nчисло π ≡ pi, число e ≡ exp(1), ∞ ≡ infinity\ne^x= exp(x), log5(x) ≡ log(x,5)\n4. Тригонометрические функции: cos(x), sin(x), tg(x), ctg(x), arccos(x), arcsin(x), arctg(x), arcctg(x)",
+        "en": "Tell me which graph to plot, and I’ll send it to you.\n\nYou can specify the function and boundaries for the x-axis [x from -1 to 1] and the y-axis [y from -1 to 1].\n\n📈 I can draw the following graphs:\n- graph of a linear function (y=a*x+b)\n- graph of a quadratic function (y=a*x^2+b*x+c)\n- graph of a cubic function (y=x^3)\n- graph of higher-degree polynomial functions (y=a*x^3+b*x^2+c*x+d)\n- graph of a square root function (y=sqrt(x))\n- graph of a hyperbola (y=1/x)\n- graph of an exponential function (y=exp(1)^x)\n- graph of a logarithmic function (y=log(x))\n- graph of trigonometric functions (y=sin(x), y=cos(x), y=tan(x), y=cot(x))\n- graph of inverse trigonometric functions (y=arcsin(x), y=arccos(x), y=arctan(x), y=arccot(x))\n\n🔻Rules for entering functions:\n1. All variables are expressed through x\n2. All mathematical operations are expressed using standard symbols +, -, *, /, ^\n3. Square root √¯ ≡ sqrt, root degree ≡ x^(2/3), (x-1)^(1/3)\nNumber π ≡ pi, number e ≡ exp(1), ∞ ≡ infinity\ne^x = exp(x), log5(x) ≡ log(x,5)\n4. Trigonometric functions: cos(x), sin(x), tan(x), cot(x), arccos(x), arcsin(x), arctan(x), arccot(x)"
+    },
+    "chart_creator_done_chart": {
+        "ru": "Ваша функция построена✅.\n\n\nСпасибо что выбрали наш Сервис!\nС уважением,Команда @student_helpergpt_bot👨‍💻.\n\n\n\n\n\n❗Решение не является окончательным результатом и требует корректировки.",
+        "en": "Your function has been plotted✅.\n\n\nThank you for choosing our Service!\nBest regards, Team @student_helpergpt_bot👨‍💻.\n\n\n\n\n\n❗The solution is not the final result and may require adjustments."
+    },
+    "default_mode_helper": {
+        "ru": "Здравствуйте! Вас приветствует StudentHelper, ваш персональный помощник в любом вопросе, рад приветствовать вас.\nЗадайте любой вопрос/пример/задачу /тему и я решу все, что скажите!\nДля ввода можно использовать:\n📝 текст;\n📸 фотографии\nКак только выберите режим ,задавайте любой вопрос!",
+        "en": "Hello! Welcome to StudentHelper, your personal assistant for any question. I'm happy to assist you.\nFeel free to ask any question/example/problem/topic, and I’ll solve whatever you need!\nYou can use:\n📝 text;\n📸 photos\nOnce you choose a mode, ask any question!"
+    },
+    "pptx_helper_welcome": {
+        "ru": "Здравствуйте! Вас приветствует StudentHelper, ваш персональный помощник в создании презентаций, рад приветствовать вас. Для того, чтобы я мог создать вам презентацию, необходимо нажать кнопку 'Сгенерировать презентаци'",
+        "en": "Hello! Welcome to StudentHelper, your personal assistant in creating presentations, I am glad to welcome you. In order for me to create a presentation for you, you need to click the 'Generate presentation' button."
+    },
+    "pptx_helper_topic_request": {
+        "ru": "Отлично! Опишите тему Презентации которую хотите сгенерировать.\nНапример: «Мир динозавров»",
+        "en": "Great! Describe the topic of  a Presentation you want to generate.\nFor example: 'The World of dinosaurs'"
+    },
+    "pptx_settings": {
+        "ru": "⚙️ Укажите необходимые настройки презентации:\n🎭 Тема: {plain_text}\n🌐 Язык презентации: {language}\n🗂 Количество слайдов: {length}\n🎨 Дизайн: {template}\n📣 Аудитория: {tone}\n🖼 Изображения: {fetch_images}\n🗒️ Объем текста: {verbosity}",
+        "en": "⚙️ Specify the necessary presentation settings:\n🎭 Topic: {plain_text}\n🌐 Presentation language: {language}\n🗂 Number of slides: {length}\n🎨 Design: {template}📣 Audience: {tone}\n🖼 Images: {fetch_images}\n🗒️ Verbosity: {verbosity}"
+    },
+    "pptx_seetings_menu": {
+        "change_length": {
+            "ru": "🗂 Выберите количество слайдов:",
+            "en": "🗂 Select the number of slides:"
+        },
+        "change_verbosity": {
+            "ru": "📝 Выберите объем текста:",
+            "en": "📝 Select the text volume:"
+        },
+        "change_tone": {
+            "ru": "📣 Выберите аудиторию:",
+            "en": "📣 Select the audience:"
+        },
+        "change_fetch_images": {
+            "ru": "🖼 Выберите режим загрузки изображений:",
+            "en": "🖼 Select the image loading mode:"
+        }
+    },
+    "not_specified": {
+        "ru": "Не указано",
+        "en": "Not specified"
+    },
+    "rewriting_helper": {
+        "ru": "Здравствуйте! Вас приветствует StudentHelper, ваш персональный помощник в💬 Уникализации текста -  я изменю вам  содержание текста не меняя его сути \nПришлите документ в формате .txt или .docx",
+        "en": "Hello! You are welcomed by StudentHelper, your personal assistant in 💬 To unify the text, I will change the content of the text for you without changing its essence.\nSend the document in the format.txt or .docx"
+    },
+    "rewriting_finish": {
+        "ru": "📝 Работа готова.\n\nВы можете  скачать файл с работой ниже.\n\nСпасибо что выбрали наш Сервис!\n\nС уважением,Команда @student_helpergpt_bot👨‍💻.\n\n❗Файл не является окончательным результатом и требует корректировки.",
+        "en": "📝 Your work is ready.\n\nYou can download the file with your work below.\n\nThank you for choosing our service!\n\nBest regards,\nThe @student_helpergpt_bot team👨‍💻.\n\n❗The file is not the final result and requires further revision."
+    },
+    "essay_helper": {
+        "ru": "Отлично! Опишите тему Эссе которую хотите сгенерировать.\nНапример: «Мир динозавров»",
+        "en": "Great! Describe the topic of The Essay you want to generate.\nFor example: 'The World of dinosaurs'"
+    },
+    "course_work_helper_welcome": {
+        "ru": "Отлично! Опишите тему Курсовой работы, которую хотите сгенерировать.\nНапример: «Мир динозавров»",
+        "en": "Great! Describe the topic of a Term Paper you want to generate.\nFor example: «The World of dinosaurs»"
+    },
+    "essay_helper_welcome": {
+        "ru": "Здравствуйте! Вас приветствует StudentHelper, ваш персональный помощник в написании Эссе, рад приветствовать вас. Все текста будут предоставлены строго с высокой уникальностью и по ГОСТу. Важно понимать, что представленные материалы являются отправной точкой и требуют дальнейшего совершенствования для соответствия всем необходимым критериям.",
+        "en": "Hello! Welcome to StudentHelper, your personal assistant in writing Papers, I am glad to welcome you. All texts will be provided strictly with high uniqueness and according to GOST. It is important to understand that the presented materials are a starting point and require further improvement to meet all the necessary criteria."
+    },
+    "abstract_helper_welcome": {
+        "ru": "Здравствуйте! Вас приветствует StudentHelper, ваш персональный помощник в написании Рефератов, рад приветствовать вас. Все текста будут предоставлены строго с высокой уникальностью и по ГОСТу. Важно понимать, что представленные материалы являются отправной точкой и требуют дальнейшего совершенствования для соответствия всем необходимым критериям",
+        "en": "Hello! Welcome to StudentHelper, your personal assistant in writing Papers, I am glad to welcome you. All texts will be provided strictly with high uniqueness and according to GOST. It is important to understand that the presented materials are a starting point and require further improvement to meet all the necessary criteria"
+    },
+    "abstract_helper": {
+        "ru": "Отлично! Опишите тему Реферата которую хотите сгенерировать.\nНапример: «Мир животных»",
+        "en": "Great! Describe the topic of Paper you want to generate.\nFor example: 'Animal World'"
+    },
+    "select_generation_mode": {
+        "ru": "Прекрасно!\nВыберите режим генерации.\n1) В автоматическом режиме, вы получите готовую работу по указанной вами темой.\n2) В режиме с планом, нейросеть будет генерировать работу строго действуя по вашему плану.",
+        "en": "Perfectly!\nSelect the generation mode.1) In automatic mode, you will receive the finished work on the topic you specified.\n2) In the planned mode, the neural network will generate work strictly acting according to your plan."
+    },
+    "abstract_manual_plan": {
+        "ru": "На этом этапе необходимо сформировать правильную структуру работы. Для этого вам нужно отправить мне план, составленный следующим образом:\n\n* Глава\n+ Под-глава\n- Пункт\n- Пункт\n+ Под-глава\n- Пункт\n- Пункт\n\nИ так далее…",
+        "en": "At this stage, it is necessary to form the correct work structure. For this, you need to send me a plan, composed as follows:\n\n* Chapter\n+ Sub-chapter\n- Item\n- Item\n+ Sub-chapter\n- Item\n- Item\n\nAnd so on..."
+    },
+    "confirm_plan_action": {
+        "ru": "Отлично!\nПотверждаем генерацию:\n\nС вашего баланса будет списана одна генерация!",
+        "en": "Great!\nWe confirm the generation:\n\nOne generation will be deducted from your balance!"
+    },
+    "generation_cancelled": {
+        "ru": "Генерация отменена",
+        "en": "Generation canceled"
+    },
+    "course_work_helper": {
+        "ru": "Здравствуйте! Вас приветствует StudentHelper, ваш персональный помощник в написании , рад приветствовать вас. Все текста будут предоставлены строго с высокой уникальностью и по ГОСТу. Важно понимать, что представленные материалы являются отправной точкой и требуют дальнейшего совершенствования для соответствия всем необходимым критериям.",
+        "en": "Hello! Welcome to StudentHelper, your personal assistant in writing a Term Papers, I am glad to welcome you. All texts will be provided strictly with high uniqueness and according to GOST. It is important to understand that the presented materials are a starting point and require further improvement to meet all the necessary criteria."
+    },
+    "work_done": {
+        "ru": "📝 Работа готова.\n\nВы можете  скачать файл с работой ниже.\n\nСпасибо что выбрали наш Сервис!\n\nС уважением,\nКоманда @student_helpergpt_bot👨‍💻.\n\n\n\n❗Файл не является окончательным результатом и требует корректировки.",
+        "en": "📝The job is ready.\n\nYou can download the file with the work below.\n\nThank you for choosing our Service!\n\nWith respect,\nThe @student_helpergpt_bot👨💻 team.\n\n\n❗The file is not the final result and needs to be adjusted."
+    },
+    "select_page_number": {
+        "ru": "Выберите количество страниц:",
+        "en": "Select the number of pages:"
+    },
+    "clear_context": {
+        "ru": "Чат очищен 🧹",
+        "en": "The chat has been cleared 🧹"
+    },
+    "subscription_description": {
+        "ru": "🤩 Наш бот предоставляет вам лучший сервис без каких либо ограничений и продолжает это делать ежедневно 24/7. Подписка позволит вам получить профессиональные возможности и решения в учебе.\n\nℹ️ Один тариф на все функции\n\n❗Ограничения по тарифу❗\n\n1️⃣ Помощник с самой передовой моделью 🧑‍🎓ChatGPT, который ответит вам на любой вопрос - безлимит.\n2️⃣ Помощник при написании 💻Кода на уровне разработчика - безлимит.\n3️⃣ Помощник для написания 📖Рефератов - 1 запрос.\n4️⃣ Помощник для написания 📄Эссе - 1 запрос.\n5️⃣ Помощник для написания 📔Курсовых работ - 1 запрос.\n6️⃣ Помощник для написания 📗Дипломных работ - 1 запрос.\n7️⃣ Помощник для проверки в системе 🗳Антиплагиат - 1 запрос.\n8️⃣ Помощник для ✏️Переписывания текста (Рерайтинга) - 2 запроса.\n9️⃣ Помощник для решения 📷Сложных математических задач по фото - безлимит.\n🔟 Помощник для 📈Построения графиков - безлимит.\n1️⃣1️⃣ Помощник для 🏞Генераций презентаций - 3 запроса.\n\nТариф действует 7 дней.",
+        "en": "🤩 Our bot provides you with the best service without any restrictions and continues to do so daily 24/7. A subscription will allow you to receive professional capabilities and solutions for your studies.\n\nℹ️ One tariff for all functions\n\n❗Subscription Plan Limitations❗\n\n1️⃣ Assistant with the most advanced model 🧑‍🎓ChatGPT, which can answer any question - unlimited.\n2️⃣ Assistant for writing 💻Code at developer level - unlimited.\n3️⃣ Assistant for writing 📖Essays - 1 request.\n4️⃣ Assistant for writing 📄Essays - 1 request.\n5️⃣ Assistant for writing 📔Courseworks - 1 request.\n6️⃣ Assistant for writing 📗Thesis - 1 request.\n7️⃣ Assistant for checking in the 🗳Anti-Plagiarism system - 1 request.\n8️⃣ Assistant for ✏️Rewriting text (Rewriting) - 2 requests.\n9️⃣ Assistant for solving 📷Complex math problems via photo - unlimited.\n🔟 Assistant for 📈Graphing - unlimited.\n1️⃣1️⃣ Assistant for 🏞Generating presentations - 3 requests.\n\nThe tariff is valid for 7 days."
+    },
+    "auto_save_on": {
+        "ru": "Режим автосохранения включен",
+        "en": "Auto-save mode is enabled"
+    },
+    "auto_save_off": {
+        "ru": "Режим автосохранения выключен",
+        "en": "Auto-save mode is disabled"
+    },
+    "subscription_requirements": {
+        "ru": "Для продолжения работы, пожалуйста, подпишитесь на наш канал.\n\nTo continue working, please subscribe to our channel.",
+        "en": "Для продолжения работы, пожалуйста, подпишитесь на наш канал.\n\nTo continue working, please subscribe to our channel."
+    },
+    "language_requirements": {
+        "ru": "Пожалуйста, выберите язык на котором продолжим:",
+        "en": "Please select the language in which we will continue"
+    },
+    "invite_friend_text": {
+        "ru": "Приглашаем к участию в реферальной программе StudentHelper! 🤝\n\nУважаемые пользователи! 🎉\n\nВоспользуйтесь отличной возможностью получить вознаграждение, рекомендуя StudentHelper своим друзьям и знакомым! 🧑‍🤝‍🧑\n\nУсловия участия:\n\n• Распространите вашу уникальную реферальную ссылку! 🔗\n• За каждого нового пользователя, зарегистрировавшегося по вашей ссылке, вы получите 1 💎 токен!\n• Каждый новый пользователь получит бесплатный час доступа ко всему функционалу StudentHelper! 🚀\n\nБаланс токенов: {invited_count} 💎\n\nВаша ссылка: <pre>{invite_link}</pre>",
+        "en": "Join the StudentHelper referral program! 🤝\n\nDear users! 🎉\n\nTake advantage of the great opportunity to earn rewards by recommending StudentHelper to your friends and acquaintances! 🧑‍🤝‍🧑\n\nTerms of participation:\n\n• Share your unique referral link! 🔗\n• For each new user who registers using your link, you will receive 1 💎 token!\n• Each new user will get one free hour of access to all StudentHelper features! 🚀\n\nToken balance: {invited_count} 💎\n\nYour link: <pre>{invite_link}</pre>"
+    },
+    "join_by_invited_link": {
+        "ru": "🎓 +1 💎 токен на твой баланс за твой вклад в образование! 🎓\n\n@{username} теперь с StudentHelper! Вместе мы делаем учебу легче! 😊",
+        "en": "🎓 +1 💎 token added to your balance for your contribution to education! 🎓\n\n@{username} is now with StudentHelper! Together we make studying easier! 😊"
+    },
+    "did_subscribe": {
         "ru": "История диалога очищена",
         "en": "Context has cleared"
     },
-    "subscription_requirements": {
-        "ru": "Бот доступен только после подписки на новостной канал",
-        "en": "The bot is available only after subscribing to the news channel"
+    "subscription_activated": {
+        "ru": "Вам предоставлен бесплатный доступ ко всему функционалу на 1час.",
+        "en": "You have free access to all the functionality for 1 hour."
     },
-    "invite_friend_text":{
-        "ru": "Пригласи друга и получишь бесплатный доступ ко всем функциям бота на 1 час\nВаша пригласительная ссылка: <pre>{invite_link}</pre>\n\nЧисло приглашенных пользователей: {invited_count}",
-        "en": "Invite a friend and get free access to all the functions of the bot for 1 hour\nYour invitation link: <pre>{invite_link}</pre>\n\nThe number of invited users: {invited_count}"
+    "promocode_status": {
+        "200": {
+            "ru": "Промокод успешно активирован ✅",
+            "en": "Promo code successfully activated ✅"
+        },
+        "400": {
+            "ru": "Промокод неверный или уже активирован",
+            "en": "Invalid promocode or been activated"
+        }
+    },
+    "payment_details": {
+        "ru": "🧾 Счёт №{order_id} создан\n\n🔹 Название товара: {item_name}.\n🏦 Способ оплаты: ЮMoney/Банковская карта\n💰 Стоимость: {price} руб.\n\n📅 Создан: {created_at}\n\n⏰ Произведите оплату в течение 10 минут. Система автоматически проверит Ваш платёж и зачислит токены на баланс.",
+        "en": "🧾 Invoice №{order_id} created\n\n🔹 Item name: {item_name}.\n🏦 Payment method: YuMoney/Bank card\n💰 Amount: {price} RUB\n\n📅 Created: {created_at}\n\n⏰ Please make the payment within 10 minutes. The system will automatically verify your payment and credit tokens to your balance."
+    },
+    "payment_text_status": {
+        "True": {
+            "ru": "Деньги успешно зачислены на счет,ваша подписка активна✅",
+            "en": "The money has been successfully credited to your account, your subscription is active✅"
+        },
+        "False": {
+            "ru": "Время для оплаты заказа #{order_id} вышло. Создайте новый счет",
+            "en": "The time for payment #{order_id} is up. You should create a new invoice"
+        }
     }
 }
