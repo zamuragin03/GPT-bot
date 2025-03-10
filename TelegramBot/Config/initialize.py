@@ -5,14 +5,10 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram import Router
 import json
 from openai import AsyncOpenAI
-from redis.asyncio import Redis
-from aiogram.fsm.storage.redis import RedisStorage
 
 scheduler = AsyncIOScheduler()
 
 bot = Bot(BOT_TOKEN,)
-redis = Redis(host='localhost', port=6379, db=5)
-redis_storage = RedisStorage(redis=redis)
 # dp = Dispatcher(storage=redis_storage)
 dp = Dispatcher(storage=MemoryStorage())
 router = Router()
