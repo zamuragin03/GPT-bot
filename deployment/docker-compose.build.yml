@@ -7,6 +7,8 @@ services:
       dockerfile: Dockerfile
     container_name: bot
     restart: always
+    ports:
+      - 80:80
     networks:
       - server
     volumes:
@@ -22,8 +24,6 @@ services:
     restart: always
     volumes:
       - db_backup:/app/db
-    ports:
-      - 80:80
     networks:
       - server
     depends_on:
