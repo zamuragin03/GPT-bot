@@ -127,10 +127,12 @@ class BannedMiddleware(BaseMiddleware):
             return await handler(event, data)
         else:
             await event.bot.send_message(
-                    event.from_user.id,
-                    text=LocalizationService.BotTexts.GetRestrictedText(user.get('language'))
-                )
-            return 
+                event.from_user.id,
+                text=LocalizationService.BotTexts.GetRestrictedText(
+                    user.get('language'))
+            )
+            return
+
 
 class AdminMiddleware(BaseMiddleware):
     async def __call__(

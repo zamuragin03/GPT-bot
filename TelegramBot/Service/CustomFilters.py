@@ -19,6 +19,8 @@ class DocumentTypeFilter(Filter):
 
 
 class gptTypeFilter(Filter):
+    #TODO lifetime подписку обработать
+    
     def __init__(self, action_type):
         self.action_type = action_type
 
@@ -40,7 +42,6 @@ class gptTypeFilter(Filter):
         limitation = limitation_object.get('limitations')
         user = limitation_object.get('user')
         if limitation[self.action_type] < limits[self.action_type]:
-            print('bas')
             return True
         else:
             await event.answer(

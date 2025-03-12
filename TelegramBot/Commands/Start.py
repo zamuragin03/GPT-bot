@@ -27,6 +27,14 @@ from Service import (LocalizationService,
 from aiogram import types
 
 
+@router.message(Command('test'))
+async def access_admin_menu(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    state = await state.get_state()
+    await message.answer(
+        '\n'.join([str(data), str(state)])
+    )
+
 @router.message(CommandStart())
 async def start(message: types.Message, state: FSMContext, ):
     data = await state.get_data()
@@ -423,9 +431,9 @@ async def change_language(call: types.CallbackQuery, state: FSMContext):
 )
 async def default_mode(call: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
-    default_mode_helper = data.get('default_mode_helper')
     default_helper_text = LocalizationService.BotTexts.GetDefaultHelperText(
         data['language'])
+    default_mode_helper = data.get('default_mode_helper')
     if not default_mode_helper:
         default_mode_helper = DefaultModeGPTService(call.from_user.id)
         await state.update_data(default_mode_helper=default_mode_helper)

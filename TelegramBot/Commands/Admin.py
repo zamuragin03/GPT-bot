@@ -11,21 +11,7 @@ from aiogram.enums.parse_mode import ParseMode
 from aiogram import types
 
 
-@admin_router.message(Command('me'))
-async def access_admin_menu(message: types.Message, state: FSMContext):
-    await message.answer(
-        long.replace('.',''),
-        parse_mode=ParseMode.MARKDOWN_V2
-    )
-    
-@admin_router.message(Command('test'))
-async def access_admin_menu(message: types.Message, state: FSMContext):
-    data = await state.get_data()
-    state = await state.get_state()
-    await message.answer(
-        '\n'.join([str(data), str(state)])
-    )
-    
+
 @admin_router.message(Command('admin_menu'))
 async def access_admin_menu(message: types.Message, state: FSMContext):
     await message.answer('Выберите действие админа', reply_markup=Keyboard.Get_Admin_Menu())

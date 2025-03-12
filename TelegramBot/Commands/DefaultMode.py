@@ -102,7 +102,6 @@ async def get_text(message: types.Message, state: FSMContext):
     data = await state.get_data()
 
     default_mode_helper = data.get('default_mode_helper')
-
     if not default_mode_helper:
         default_mode_helper = DefaultModeGPTService(message.from_user.id)
         await state.update_data(default_mode_helper=default_mode_helper)
