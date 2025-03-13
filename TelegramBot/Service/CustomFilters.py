@@ -19,35 +19,50 @@ class DocumentTypeFilter(Filter):
 
 
 class gptTypeFilter(Filter):
-    #TODO lifetime подписку обработать
+    # TODO lifetime подписку обработать
     
     def __init__(self, action_type):
         self.action_type = action_type
 
     async def __call__(self, event: Union[types.Message, types.CallbackQuery],) -> bool:
         subscription = TelegramUserSubscriptionService.GetUserActiveSubscription(
-            event.from_user.id)
+            event.from_user.id
+        )
 
         if subscription:
-            # Пользователь с активной подпиской
-            limitation_object = TelegramUserSubscriptionService.GetUserLimitations(
-                event.from_user.id)
-            limits = SUBSCRIPTION_LIMITATIONS
+            limitation_object, limits = self._get_limitations(
+                TelegramUserSubscriptionService.GetUserLimitations(event.from_user.id),
+                SUBSCRIPTION_LIMITATIONS
+            )
         else:
-            # Пользователь без активной подписки
-            limitation_object = TelegramUserSubscriptionService.GetUserDailyLimitations(
-                event.from_user.id)
-            limits = DAILY_LIMITATIONS
+            limitation_object, limits = self._get_limitations(
+                TelegramUserSubscriptionService.GetUserDailyLimitations(event.from_user.id),
+                DAILY_LIMITATIONS
+            )
+        if not limitation_object:
+            return await self._handle_limit_exceeded(event, user_language=None)
 
         limitation = limitation_object.get('limitations')
         user = limitation_object.get('user')
+
         if limitation[self.action_type] < limits[self.action_type]:
             return True
         else:
-            await event.answer(
-                text=LocalizationService.BotTexts.GetLimitiedText(
-                    user.get('language')),
-                show_alert=True
-            )
-            return False
+            return await self._handle_limit_exceeded(event, user.get('language'))
+
+    def _get_limitations(self, limitation_object, limits):
+        return limitation_object, limits
+
+    async def _handle_limit_exceeded(self, event, user_language):
+        if user_language:
+            message = LocalizationService.BotTexts.GetLimitiedText(user_language)
+        else:
+            message = LocalizationService.BotTexts.GetLimitiedText("ru")
+
+        await event.answer(
+            text=message,
+            show_alert=True
+        )
+        return False
+
         

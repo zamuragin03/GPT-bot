@@ -35,6 +35,7 @@ async def access_admin_menu(message: types.Message, state: FSMContext):
         '\n'.join([str(data), str(state)])
     )
 
+
 @router.message(CommandStart())
 async def start(message: types.Message, state: FSMContext, ):
     data = await state.get_data()
@@ -108,9 +109,10 @@ async def start(call: types.CallbackQuery, state: FSMContext, ):
 async def select_language(call: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     await call.message.edit_text(
-        text=LocalizationService.BotTexts.GetInstrumentsText(data.get('language', 'ru')),
+        text=LocalizationService.BotTexts.GetInstrumentsText(
+            data.get('language', 'ru')),
         reply_markup=Keyboard.Get_Instruments(
-            call.from_user.id, data['language'])
+            call.from_user.id, data.get('language', 'ru'))
     )
     await state.set_state(FSMUser.select_mode)
 
@@ -125,9 +127,10 @@ async def select_language(call: types.CallbackQuery, state: FSMContext):
 async def instuments(message: types.Message, state: FSMContext):
     data = await state.get_data()
     await message.answer(
-        text=LocalizationService.BotTexts.GetInstrumentsText(data['language']),
+        text=LocalizationService.BotTexts.GetInstrumentsText(
+            data.get('language', 'ru')),
         reply_markup=Keyboard.Get_Instruments(
-            message.from_user.id, data['language'])
+            message.from_user.id, data.get('language', 'ru'))
     )
     await state.set_state(FSMUser.select_mode)
 # Инструменты и коллбэк на inline кнопки
@@ -161,13 +164,13 @@ async def menu(call: types.CallbackQuery, state: FSMContext):
         TelegramUserSubscriptionService.CreateSubscription(
             call.from_user.id, 1)
         sub_activated_text = LocalizationService.BotTexts.SubscriptionActivated(
-            data['language'])
+            data.get('language', 'ru'))
         await call.message.answer(
             text=sub_activated_text
         )
     await call.message.answer(
         text='Выберите действие',
-        reply_markup=Keyboard.Get_Menu(data['language'])
+        reply_markup=Keyboard.Get_Menu(data.get('language', 'ru'))
     )
     await state.set_state(FSMUser.choosing_action)
 
@@ -188,8 +191,9 @@ async def select_language(call: types.CallbackQuery, state: FSMContext):
         code_helper = CodeHelperGPTService(external_id=call.from_user.id)
         await state.update_data(code_helper=code_helper)
     await call.message.edit_text(
-        text=LocalizationService.BotTexts.GetCodeHelperText(data['language']),
-        reply_markup=Keyboard.Code_helper_buttons(data['language'])
+        text=LocalizationService.BotTexts.GetCodeHelperText(
+            data.get('language', 'ru')),
+        reply_markup=Keyboard.Code_helper_buttons(data.get('language', 'ru'))
 
     )
     await state.set_state(FSMCodeHelper.typing_message)
@@ -210,8 +214,9 @@ async def rewriting_helper(call: types.CallbackQuery, state: FSMContext):
         rewriting_helper = RewritingGPTService(external_id=call.from_user.id)
         await state.update_data(rewriting_helper=rewriting_helper)
     await call.message.edit_text(
-        text=LocalizationService.BotTexts.GetRewritingHelper(data['language']),
-        reply_markup=Keyboard.Get_Back_Button(data['language'])
+        text=LocalizationService.BotTexts.GetRewritingHelper(
+            data.get('language', 'ru')),
+        reply_markup=Keyboard.Get_Back_Button(data.get('language', 'ru'))
     )
     await state.set_state(FSMRewritingHelper.sending_document)
 
@@ -239,10 +244,11 @@ async def chart_creator_helper(call: types.CallbackQuery, state: FSMContext):
 async def chart_creator_helper(call: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     chart_creator_text = LocalizationService.BotTexts.GetChartCreatorInitText(
-        data['language'])
+        data.get('language', 'ru'))
     await call.message.edit_text(
         text=chart_creator_text,
-        reply_markup=Keyboard.ActionsWithPlotCreator(data['language'])
+        reply_markup=Keyboard.ActionsWithPlotCreator(
+            data.get('language', 'ru'))
     )
     await state.set_state(FSMChartCreator.choosing_action)
 
@@ -291,7 +297,7 @@ async def chart_creator_helper(call: types.CallbackQuery, state: FSMContext):
 async def chart_creator_helper(call: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     course_work_text = LocalizationService.BotTexts.GetCourseWorkText(
-        data['language'])
+        data.get('language', 'ru'))
 
     await call.message.edit_text(
         text=course_work_text,
@@ -312,7 +318,7 @@ async def chart_creator_helper(call: types.CallbackQuery, state: FSMContext):
 async def invite_friend(message: types.Message, state: FSMContext):
     data = await state.get_data()
     referal_system_text = LocalizationService.BotTexts.ReferalSystemText(
-        data['language'])
+        data.get('language', 'ru'))
     invite_link = f"https://t.me/student_helpergpt_bot?start={message.from_user.id}"
     invited_count = TelegramUserService.GetUserReferalsCount(
         message.from_user.id)
@@ -322,7 +328,7 @@ async def invite_friend(message: types.Message, state: FSMContext):
             invited_count=invited_count
         ),
         reply_markup=Keyboard.Get_Invitation_Link(
-            data['language'], invite_link),
+            data.get('language', 'ru'), invite_link),
         parse_mode='HTML'
     )
     await state.set_state(FSMUser.in_fereal_sytem)
@@ -339,13 +345,13 @@ async def invite_friend(message: types.Message, state: FSMContext):
 async def buy_subscription(message: types.Message, state: FSMContext):
     data = await state.get_data()
     subscription_text = LocalizationService.BotTexts.SubscriptionText(
-        data['language'])
+        data.get('language', 'ru'))
     subscription = SubscriptionTypeService.GetSubscriptionByDuration(168)
     await message.answer(
         text=subscription_text,
         parse_mode='HTML',
         reply_markup=Keyboard.GetSubscriptionButton(
-            data['language'], subscription.get('price'))
+            data.get('language', 'ru'), subscription.get('price'))
     )
     await state.set_state(FSMUser.choosing_action_with_sub)
 
@@ -359,7 +365,7 @@ async def setup_promocode(call: types.CallbackQuery, state: FSMContext):
     await call.message.answer(
         text='Отправьте промокод,',
         parse_mode='HTML',
-        reply_markup=Keyboard.Get_Back_Button(data['language'])
+        reply_markup=Keyboard.Get_Back_Button(data.get('language', 'ru'))
     )
     await state.set_state(FSMUser.typing_promocode)
 
@@ -373,7 +379,7 @@ async def my_profile(message: types.Message, state: FSMContext):
     status_code = PromocodeService.ActivatePromocode(
         message.from_user.id, message.text)
     response_text = LocalizationService.BotTexts.GetPromocodeText(
-        status_code, data['language'])
+        status_code, data.get('language', 'ru'))
     await message.answer(
         response_text
     )
@@ -394,11 +400,11 @@ async def my_profile(message: types.Message, state: FSMContext):
     user_obj = TelegramUserService.GetTelegramUserByExternalId(
         message.from_user.id)
     text_to_send = BotService.get_my_profile_text(
-        message.from_user, user_obj, current_subscription, data['language'])
+        message.from_user, user_obj, current_subscription, data.get('language', 'ru'))
     await message.answer(
         text=text_to_send,
         parse_mode='HTML',
-        reply_markup=Keyboard.Get_My_Profile_button(data['language'])
+        reply_markup=Keyboard.Get_My_Profile_button(data.get('language', 'ru'))
     )
     await state.set_state(FSMUser.choosing_action_with_my_profile)
 
@@ -413,7 +419,7 @@ async def change_language(call: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
 
     hr_text = LocalizationService.BotTexts.GetHumanReadableLanguage(
-        data['language'])
+        data.get('language', 'ru'))
     await call.message.answer(
         f'Текущий язык: {hr_text} \nВы можете изменить язык',
         reply_markup=Keyboard.Choose_Language()
@@ -432,14 +438,14 @@ async def change_language(call: types.CallbackQuery, state: FSMContext):
 async def default_mode(call: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     default_helper_text = LocalizationService.BotTexts.GetDefaultHelperText(
-        data['language'])
+        data.get('language', 'ru'))
     default_mode_helper = data.get('default_mode_helper')
     if not default_mode_helper:
         default_mode_helper = DefaultModeGPTService(call.from_user.id)
         await state.update_data(default_mode_helper=default_mode_helper)
     await call.message.edit_text(
         text=default_helper_text,
-        reply_markup=Keyboard.Code_helper_buttons(data['language']),
+        reply_markup=Keyboard.Code_helper_buttons(data.get('language', 'ru')),
         parse_mode='HTML'
     )
 
@@ -452,10 +458,11 @@ async def default_mode(call: types.CallbackQuery, state: FSMContext):
 async def select_language(call: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     pptx_text = LocalizationService.BotTexts.GetPPTXWelcomeText(
-        data['language'])
+        data.get('language', 'ru'))
     await call.message.edit_text(
         text=pptx_text,
-        reply_markup=Keyboard.GetPresentationButtons(data['language'])
+        reply_markup=Keyboard.GetPresentationButtons(
+            data.get('language', 'ru'))
 
     )
     await state.set_state(FSMPPTXHelper.choosing_action)

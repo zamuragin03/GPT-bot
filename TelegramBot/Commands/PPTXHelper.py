@@ -20,7 +20,7 @@ from Service import LocalizationService, BotService, CustomFilters
 async def StartPPTX(call: types.CallbackQuery, state: FSMContext, ):
     data = await state.get_data()
     await call.message.answer(
-        LocalizationService.BotTexts.GetPPTXTopicRequest(data['language']),
+        LocalizationService.BotTexts.GetPPTXTopicRequest(data.get('language','ru')),
     )
     await state.set_state(FSMPPTXHelper.typing_topic)
 
@@ -32,10 +32,10 @@ async def GeneratePPTX(message: types.Message, state: FSMContext):
     await state.update_data(plain_text=message.text)
     data = await state.get_data()
     presentation_settings_text = BotService.GetPPTXSettings(
-        selected_language=data['language'], **data)
+        selected_language=data.get('language','ru'), **data)
     await message.answer(
         presentation_settings_text,
-        reply_markup=Keyboard.Pptx_actions_kb(data['language']),
+        reply_markup=Keyboard.Pptx_actions_kb(data.get('language','ru')),
     )
     await state.set_state(FSMPPTXHelper.setting_options)
 
@@ -47,10 +47,10 @@ async def GeneratePPTX(message: types.Message, state: FSMContext):
 async def change_verbosity(call: types.CallbackQuery, state: FSMContext, ):
     data = await state.get_data()
     change_verbosity_text = LocalizationService.BotTexts.GetPPTXSpecificSettingText(
-        call.data, data['language'])
+        call.data, data.get('language','ru'))
     await call.message.answer(
         text=change_verbosity_text,
-        reply_markup=Keyboard.GetVerbosityKb(data['language'])
+        reply_markup=Keyboard.GetVerbosityKb(data.get('language','ru'))
     )
 
     await state.set_state(FSMPPTXHelper.change_verbosity)
@@ -63,10 +63,10 @@ async def changeVerbosity(call: types.CallbackQuery, state: FSMContext, callback
     await state.update_data(verbosity=callback_data.verbosity)
     data = await state.get_data()
     presentation_settings_text = BotService.GetPPTXSettings(
-        selected_language=data['language'], **data)
+        selected_language=data.get('language','ru'), **data)
     await call.message.answer(presentation_settings_text,
                               reply_markup=Keyboard.Pptx_actions_kb(
-                                  data['language']),
+                                  data.get('language','ru')),
                               )
     await state.set_state(FSMPPTXHelper.setting_options)
     
@@ -86,7 +86,7 @@ async def change_language(call: types.CallbackQuery, state: FSMContext, ):
 async def change_language(call: types.CallbackQuery, state: FSMContext, ):
     data = await state.get_data()
     change_length_text = LocalizationService.BotTexts.GetPPTXSpecificSettingText(
-        call.data, data['language'])
+        call.data, data.get('language','ru'))
     await call.message.answer(
         text=change_length_text,
         reply_markup=Keyboard.GetSlidesCount()
@@ -106,10 +106,10 @@ async def handle_callback(call: types.CallbackQuery, state: FSMContext,):
     await state.update_data(length=button_id)
     data = await state.get_data()
     presentation_settings_text = BotService.GetPPTXSettings(
-        selected_language=data['language'], **data)
+        selected_language=data.get('language','ru'), **data)
     await call.message.answer(presentation_settings_text,
                               reply_markup=Keyboard.Pptx_actions_kb(
-                                  data['language']),
+                                  data.get('language','ru')),
                               )
     await state.set_state(FSMPPTXHelper.setting_options)
 
@@ -131,10 +131,10 @@ async def change_template(call: types.CallbackQuery, state: FSMContext, ):
 async def change_fetch_images(call: types.CallbackQuery, state: FSMContext, ):
     data = await state.get_data()
     change_fetch_images_text = LocalizationService.BotTexts.GetPPTXSpecificSettingText(
-        call.data, data['language'])
+        call.data, data.get('language','ru'))
     await call.message.answer(
         text=change_fetch_images_text,
-        reply_markup=Keyboard.GetFetchImagesKb(data['language'])
+        reply_markup=Keyboard.GetFetchImagesKb(data.get('language','ru'))
     )
 
     await state.set_state(FSMPPTXHelper.change_fetch_images)
@@ -148,10 +148,10 @@ async def change_image_fetch(call: types.CallbackQuery, state: FSMContext, callb
     await state.update_data(fetch_images=callback_data.fetch_image)
     data = await state.get_data()
     presentation_settings_text = BotService.GetPPTXSettings(
-        selected_language=data['language'], **data)
+        selected_language=data.get('language','ru'), **data)
     await call.message.answer(presentation_settings_text,
                               reply_markup=Keyboard.Pptx_actions_kb(
-                                  data['language']),
+                                  data.get('language','ru')),
                               )
     await state.set_state(FSMPPTXHelper.setting_options)
     
@@ -163,10 +163,10 @@ async def change_image_fetch(call: types.CallbackQuery, state: FSMContext, callb
 async def change_tone(call: types.CallbackQuery, state: FSMContext, ):
     data = await state.get_data()
     change_tone_text = LocalizationService.BotTexts.GetPPTXSpecificSettingText(
-        call.data, data['language'])
+        call.data, data.get('language','ru'))
     await call.message.answer(
         text=change_tone_text,
-        reply_markup=Keyboard.GetToneKb(data['language'])
+        reply_markup=Keyboard.GetToneKb(data.get('language','ru'))
     )
     await state.set_state(FSMPPTXHelper.change_tone)
 
@@ -178,9 +178,9 @@ async def changeTone(call: types.CallbackQuery, state: FSMContext, callback_data
     await state.update_data(tone=callback_data.tone)
     data = await state.get_data()
     presentation_settings_text = BotService.GetPPTXSettings(
-        selected_language=data['language'], **data)
+        selected_language=data.get('language','ru'), **data)
     await call.message.answer(presentation_settings_text,
                               reply_markup=Keyboard.Pptx_actions_kb(
-                                  data['language']),
+                                  data.get('language','ru')),
                               )
     await state.set_state(FSMPPTXHelper.setting_options)

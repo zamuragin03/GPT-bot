@@ -22,7 +22,7 @@ from Service import CustomFilters, BotService, ChartCreatorGPTService, Localizat
 async def handleRequest(call: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     rules_text = LocalizationService.BotTexts.GetChartCreatorRulesText(
-        data['language'])
+        data.get('language','ru'))
     await call.message.answer(rules_text),
     await state.set_state(FSMChartCreator.typing_request)
 
@@ -34,10 +34,10 @@ async def handleRequest(message: types.Message, state: FSMContext):
     data = await state.get_data()
     chart_creator = ChartCreatorGPTService(message.from_user.id)
     typing_text = LocalizationService.BotTexts.GenerationTextByWorkType(
-        data['language'], 'chart', 'start')
+        data.get('language','ru'), 'chart', 'start')
     demand_minutes, demand_seconds = 0, 15
     finish_text = LocalizationService.BotTexts.GenerationTextByWorkType(
-        data['language'], 'chart', 'finish')
+        data.get('language','ru'), 'chart', 'finish')
     countdown_message = await message.answer(typing_text.format(
         minutes=demand_minutes,
         seconds=demand_seconds,
@@ -58,7 +58,7 @@ async def handleRequest(message: types.Message, state: FSMContext):
     else:
         try:
             done_chart_text = LocalizationService.BotTexts.GetChartCreatorDoneGraph(
-                data['language'])
+                data.get('language','ru'))
             image_to_send = BotService.create_image_by_user_requset(
                 response_from_chat, message.from_user.id)
             await message.answer_photo(

@@ -20,10 +20,10 @@ async def handlePhoto(message: types.Message, state: FSMContext):
 
     await bot.send_chat_action(message.chat.id, action="typing")
     typing_text = LocalizationService.BotTexts.GenerationTextByWorkType(
-        data['language'], 'photo_math', 'start')
+        data.get('language','ru'), 'photo_math', 'start')
     demand_minutes, demand_seconds = 0, 35
     finish_text = LocalizationService.BotTexts.GenerationTextByWorkType(
-        data['language'], 'photo_math', 'finish')
+        data.get('language','ru'), 'photo_math', 'finish')
     countdown_message = await message.answer(typing_text.format(
         minutes=demand_minutes,
         seconds=demand_seconds,

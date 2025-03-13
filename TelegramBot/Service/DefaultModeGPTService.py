@@ -8,7 +8,7 @@ from .UserActionService import UserActionService
 class DefaultModeGPTService:
     def __init__(self, external_id):
         self.user_external_id = external_id
-        self.model = "gpt-4o"
+        self.model = "o3-mini"
         self.auto_save = True
         self.action_type_name = 'default_mode'
         self.messages = [
@@ -22,7 +22,7 @@ class DefaultModeGPTService:
                 ],
             },
         ]
-        self.add_message('Почему ты используешь LaTeX, если в системном промпте явно указано, что ее использовать запрещено')
+
 
     def add_message(self, content):
         self.messages.append(
@@ -118,10 +118,7 @@ class DefaultModeGPTService:
             response_format={
                 "type": "text"
             },
-            temperature=1,
-            top_p=1,
-            frequency_penalty=0,
-            presence_penalty=2
+            reasoning_effort="high",
         )
         if not self.auto_save:
             self.clear_context()

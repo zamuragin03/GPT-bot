@@ -61,9 +61,7 @@ async def get_photo(message: types.Message, state: FSMContext):
     try:
         await countdown_message.edit_text(
             response,
-            parse_mode=ParseMode.HTML,
-            reply_markup=Keyboard.Code_helper_buttons(user.get('language')),
-
+            parse_mode=ParseMode.HTML
         )
     except Exception as e:
         print(e)
@@ -111,7 +109,6 @@ async def get_text(message: types.Message, state: FSMContext):
     try:
         await countdown_message.edit_text(
             response,
-            reply_markup=Keyboard.Code_helper_buttons(user.get('language')),
             parse_mode=ParseMode.HTML
         )
     except Exception as e:

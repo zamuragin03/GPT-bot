@@ -45,18 +45,15 @@ class PaymentService:
         payment_id = self.order_detail.id
         while self.order_detail['status'] == 'pending':
             self.order_detail = Payment.find_one(payment_id)
-            print(self.order_detail['status'])
             await asyncio.sleep(3)
 
         if self.order_detail['status'] == 'succeeded':
-            print("SUCCSESS RETURN")
             PaymentAPI.UpdatePayment(
                 order_id=self.order_id,
                 status='success'
             )
             return True
         else:
-            print("BAD RETURN")
             PaymentAPI.UpdatePayment(
                 order_id=self.order_id,
                 status='fail'

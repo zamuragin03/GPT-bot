@@ -22,9 +22,9 @@ async def handle_txt(message: types.Message, state: FSMContext):
     data = await state.get_data()
     content = await BotService.GetTXTFileContent(bot, message)
     rewriting_helper: RewritingGPTService = data.get('rewriting_helper')
-    typing_text = LocalizationService.BotTexts.GenerationTextByWorkType(data['language'], 'rewriting', 'start')
+    typing_text = LocalizationService.BotTexts.GenerationTextByWorkType(data.get('language','ru'), 'rewriting', 'start')
     demand_minutes, demand_seconds = 0, 35
-    finish_text = LocalizationService.BotTexts.GenerationTextByWorkType(data['language'], 'rewriting', 'finish')
+    finish_text = LocalizationService.BotTexts.GenerationTextByWorkType(data.get('language','ru'), 'rewriting', 'finish')
     countdown_message = await message.answer(typing_text.format(
         minutes=demand_minutes,
         seconds=demand_seconds,
@@ -47,8 +47,8 @@ async def handle_txt(message: types.Message, state: FSMContext):
         pass
     await message.answer_document(
         document=result_file,
-        caption=LocalizationService.BotTexts.GetRewritingDone(data['language']),
-        reply_markup=Keyboard.Clear_Context_kb(data['language']),
+        caption=LocalizationService.BotTexts.GetRewritingDone(data.get('language','ru')),
+        reply_markup=Keyboard.Clear_Context_kb(data.get('language','ru')),
         parse_mode=ParseMode.HTML,
     )
 
@@ -60,13 +60,12 @@ async def handle_txt(message: types.Message, state: FSMContext):
     
 )
 async def handle_txt(message: types.Message, state: FSMContext):
-    document = message.document
     data = await state.get_data()
-    content = await BotService.GetWordFileContent(bot, document)
+    content = await BotService.GetWordFileContent(bot, message)
     rewriting_helper: RewritingGPTService = data.get('rewriting_helper')
-    typing_text = LocalizationService.BotTexts.GenerationTextByWorkType(data['language'], 'rewriting', 'start')
+    typing_text = LocalizationService.BotTexts.GenerationTextByWorkType(data.get('language','ru'), 'rewriting', 'start')
     demand_minutes, demand_seconds = 0, 35
-    finish_text = LocalizationService.BotTexts.GenerationTextByWorkType(data['language'], 'rewriting', 'finish')
+    finish_text = LocalizationService.BotTexts.GenerationTextByWorkType(data.get('language','ru'), 'rewriting', 'finish')
     countdown_message = await message.answer(typing_text.format(
         minutes=demand_minutes,
         seconds=demand_seconds,
@@ -89,8 +88,8 @@ async def handle_txt(message: types.Message, state: FSMContext):
         pass
     await message.answer_document(
         document=result_file,
-        caption=LocalizationService.BotTexts.GetRewritingDone(data['language']),
-        reply_markup=Keyboard.Clear_Context_kb(data['language']),
+        caption=LocalizationService.BotTexts.GetRewritingDone(data.get('language','ru')),
+        reply_markup=Keyboard.Clear_Context_kb(data.get('language','ru')),
         parse_mode=ParseMode.HTML,
     )
 
@@ -104,8 +103,8 @@ async def clear_context(call: types.CallbackQuery, state: FSMContext):
     rewriting_helper: RewritingGPTService = data.get('rewriting_helper')
     rewriting_helper.clear_context()
     await call.answer(
-        LocalizationService.BotTexts.GetClearContextText(data['language']),
-        reply_markup=Keyboard.Clear_Context_kb(data['language']),
+        LocalizationService.BotTexts.GetClearContextText(data.get('language','ru')),
+        reply_markup=Keyboard.Clear_Context_kb(data.get('language','ru')),
         parse_mode=ParseMode.HTML,
         show_alert=True
     )

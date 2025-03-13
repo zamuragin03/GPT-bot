@@ -67,7 +67,7 @@ async def SelectPageumber(call: types.CallbackQuery, state: FSMContext, callback
 async def set_plan(call: types.CallbackQuery, state: FSMContext,):
     data = await state.get_data()
     manual_plan = LocalizationService.BotTexts.GetAbstractManualPlan(
-        data['language'])
+        data.get('language','ru'))
     await call.message.edit_text(manual_plan,)
     await state.set_state(FSMAbstracthelper.typing_manual_plan)
 
@@ -78,7 +78,7 @@ async def set_plan(call: types.CallbackQuery, state: FSMContext,):
 async def retrieving_manual_plan(message: types.Message, state: FSMContext,):
     user_text = message.text
     data = await state.get_data()
-    thinking_message = await message.answer(LocalizationService.BotTexts.CreatingPlanMessage(data['language']))
+    thinking_message = await message.answer(LocalizationService.BotTexts.CreatingPlanMessage(data.get('language','ru')))
     abstract_service = data.get('abstract_service')
 
     if not abstract_service:
@@ -91,11 +91,11 @@ async def retrieving_manual_plan(message: types.Message, state: FSMContext,):
     plan = await abstract_service.get_plan_response()
     parsed_plan = BotService.parse_work_plan(plan)
     await message.answer(
-        LocalizationService.BotTexts.GetPlanScheme(data['language']),
+        LocalizationService.BotTexts.GetPlanScheme(data.get('language','ru')),
     )
     await message.answer(
         parsed_plan,
-        reply_markup=Keyboard.ActionsWithDonePlan(data['language'],),
+        reply_markup=Keyboard.ActionsWithDonePlan(data.get('language','ru'),),
         parse_mode=ParseMode.HTML
     )
     await state.set_state(FSMAbstracthelper.choosing_action_with_plan)
@@ -107,7 +107,7 @@ async def retrieving_manual_plan(message: types.Message, state: FSMContext,):
     FSMAbstracthelper.choosing_plan_generation
 )
 async def auto_plan(call: types.CallbackQuery, state: FSMContext,):
-    thinking_message = await call.message.answer(LocalizationService.BotTexts.CreatingPlanMessage(data['language']))
+    thinking_message = await call.message.answer(LocalizationService.BotTexts.CreatingPlanMessage(data.get('language','ru')))
     await bot.send_chat_action(call.message.chat.id, action="typing")
 
     data = await state.get_data()
@@ -122,11 +122,11 @@ async def auto_plan(call: types.CallbackQuery, state: FSMContext,):
     abstract_service.get_initial_plan()
     plan = await abstract_service.get_plan_response()
     parsed_plan = BotService.parse_work_plan(plan)
-    await call.message.answer(LocalizationService.BotTexts.GetPlanScheme(data['language']))
+    await call.message.answer(LocalizationService.BotTexts.GetPlanScheme(data.get('language','ru')))
 
     await call.message.answer(
         parsed_plan,
-        reply_markup=Keyboard.ActionsWithDonePlan(data['language'],),
+        reply_markup=Keyboard.ActionsWithDonePlan(data.get('language','ru'),),
         parse_mode=ParseMode.HTML
     )
     await state.set_state(FSMAbstracthelper.choosing_action_with_plan)
@@ -144,12 +144,12 @@ async def handleRequestAbstract(call: types.CallbackQuery, state: FSMContext):
     if not abstract_service.is_retries_allowed():
         await call.answer(
             LocalizationService.BotTexts.RegenerationLimitExceded(
-                data['language']),
+                data.get('language','ru')),
             show_alert=True
         )
         return
 
-    await call.message.edit_text(LocalizationService.BotTexts.CreatingPlanMessage(data['language']))
+    await call.message.edit_text(LocalizationService.BotTexts.CreatingPlanMessage(data.get('language','ru')))
     await bot.send_chat_action(call.message.chat.id, action="typing")
     abstract_service.regenerate_plan()
     plan = await abstract_service.get_plan_response()
@@ -157,7 +157,7 @@ async def handleRequestAbstract(call: types.CallbackQuery, state: FSMContext):
     parsed_plan = BotService.parse_work_plan(plan)
     await call.message.answer(
         parsed_plan,
-        reply_markup=Keyboard.ActionsWithDonePlan(data['language']),
+        reply_markup=Keyboard.ActionsWithDonePlan(data.get('language','ru')),
         parse_mode=ParseMode.HTML
     )
     await state.set_state(FSMAbstracthelper.choosing_action_with_plan)
@@ -170,10 +170,10 @@ async def handleRequestAbstract(call: types.CallbackQuery, state: FSMContext):
 async def handleRequestAbstract(call: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     confirm_plan_text = LocalizationService.BotTexts.GetConfirmPlanText(
-        data['language'])
+        data.get('language','ru'))
     await call.message.answer(
         confirm_plan_text,
-        reply_markup=Keyboard.GetConfirmationActions(data['language'])
+        reply_markup=Keyboard.GetConfirmationActions(data.get('language','ru'))
     )
     await state.set_state(FSMAbstracthelper.proceed_action)
 
@@ -185,10 +185,10 @@ async def handleRequestAbstract(call: types.CallbackQuery, state: FSMContext):
 async def handleRequestAbstract(call: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     typing_text = LocalizationService.BotTexts.GenerationTextByWorkType(
-        data['language'], 'abstract', 'start')
+        data.get('language','ru'), 'abstract', 'start')
     demand_minutes, demand_seconds = 1, 10
     finish_text = LocalizationService.BotTexts.GenerationTextByWorkType(
-        data['language'], 'abstract', 'finish')
+        data.get('language','ru'), 'abstract', 'finish')
     countdown_message = await call.message.answer(typing_text.format(
         minutes=demand_minutes,
         seconds=demand_seconds,
@@ -233,8 +233,8 @@ async def handleRequestAbstract(call: types.CallbackQuery, state: FSMContext):
 async def cancel_creating(call: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     cancellation_text = LocalizationService.BotTexts.GetCancellationText(
-        data['language'])
+        data.get('language','ru'))
     await call.message.answer(
         cancellation_text,
-        reply_markup=Keyboard.Get_Back_Button(data['language'])
+        reply_markup=Keyboard.Get_Back_Button(data.get('language','ru'))
     )

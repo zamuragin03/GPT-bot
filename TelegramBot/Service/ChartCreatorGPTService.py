@@ -51,5 +51,4 @@ class ChartCreatorGPTService:
             ]
         )
         self.add_action(response, user_request)
-        print(parser.parse(response.choices[0].message.content))
         return parser.parse(response.choices[0].message.content)

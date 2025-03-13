@@ -253,7 +253,7 @@ class CheckUserLimitationsByExternalId(APIView):
         try:
             user = TelegramUser.objects.get(external_id=external_id)
         except TelegramUser.DoesNotExist:
-            return Response({"error": "User not found"}, status=404)
+            return Response({}, status=404)
 
         # 2. Получаем последнюю активную подписку пользователя
         user_subscription = user.usersubscription_set.filter(
@@ -299,7 +299,7 @@ class CheckUserActionsLast24Hours(APIView):
         try:
             user = TelegramUser.objects.get(external_id=external_id)
         except TelegramUser.DoesNotExist:
-            return Response({"error": "User not found"}, status=404)
+            return Response({}, status=404)
 
         # 2. Вычисляем время 24 часа назад
         end_time = timezone.now()
@@ -311,7 +311,6 @@ class CheckUserActionsLast24Hours(APIView):
             created_at__gte=start_time,
             created_at__lte=end_time
         )
-        print(user_actions)
         # 4. Создаем словарь, который изначально содержит 0 для всех action_type
         action_counts = {
             action_type.name: 0 for action_type in ActionType.objects.all()

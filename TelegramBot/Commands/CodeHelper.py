@@ -21,9 +21,9 @@ from aiogram import types
 )
 async def typing_message(message: types.Message, state: FSMContext):
     data = await state.get_data()
-    typing_text = LocalizationService.BotTexts.GenerationTextByWorkType(data['language'], 'code', 'start')
+    typing_text = LocalizationService.BotTexts.GenerationTextByWorkType(data.get('language','ru'), 'code', 'start')
     demand_minutes, demand_seconds = 0, 10
-    finish_text = LocalizationService.BotTexts.GenerationTextByWorkType(data['language'], 'code', 'finish')
+    finish_text = LocalizationService.BotTexts.GenerationTextByWorkType(data.get('language','ru'), 'code', 'finish')
     countdown_message = await message.answer(typing_text.format(
         minutes=demand_minutes,
         seconds=demand_seconds,
@@ -37,7 +37,7 @@ async def typing_message(message: types.Message, state: FSMContext):
     response = await code_helper.generate_response(message.text)
     await message.answer(
         response,
-        reply_markup=Keyboard.Code_helper_buttons(data['language']),
+        reply_markup=Keyboard.Code_helper_buttons(data.get('language','ru')),
         parse_mode=ParseMode.MARKDOWN,
     )
     countdown_task.cancel()
@@ -56,8 +56,8 @@ async def clear_context(call: types.CallbackQuery, state: FSMContext):
     code_helper: CodeHelperGPTService = data.get('code_helper')
     code_helper.set_auto_save(True if call.data == 'auto_save_on' else False)
     await call.answer(
-        LocalizationService.BotTexts.GetCodeHelperAutoSaveText(call.data, data['language']),
-        reply_markup=Keyboard.Clear_Context_kb(data['language']),
+        LocalizationService.BotTexts.GetCodeHelperAutoSaveText(call.data, data.get('language','ru')),
+        reply_markup=Keyboard.Clear_Context_kb(data.get('language','ru')),
         parse_mode=ParseMode.MARKDOWN,
         show_alert=True
     )
@@ -72,8 +72,8 @@ async def clear_context(call: types.CallbackQuery, state: FSMContext):
     code_helper: CodeHelperGPTService = data.get('code_helper')
     code_helper.clear_context()
     await call.answer(
-        LocalizationService.BotTexts.GetClearContextText(data['language']),
-        reply_markup=Keyboard.Clear_Context_kb(data['language']),
+        LocalizationService.BotTexts.GetClearContextText(data.get('language','ru')),
+        reply_markup=Keyboard.Clear_Context_kb(data.get('language','ru')),
         parse_mode=ParseMode.MARKDOWN,
         show_alert=True
     )

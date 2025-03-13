@@ -48,5 +48,4 @@ class SolvePhotoGPTService:
             frequency_penalty=0,
             presence_penalty=0
         )
-        print(f'Всего токенов за запрос: {response.usage.total_tokens}')
         return parser.parse(response.choices[0].message.content)

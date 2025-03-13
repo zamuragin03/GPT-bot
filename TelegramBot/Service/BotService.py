@@ -251,9 +251,12 @@ class BotService:
         return FSInputFile(path=end_path, filename="result.txt")
 
     @staticmethod
-    async def GetWordFileContent(bot: Bot, document: types.Document):
+    async def GetWordFileContent(bot: Bot, message: types.Message):
+        document = message.document
         file = await bot.get_file(document.file_id)
-        file_path = f'./{file.file_unique_id}.docx'
+        file_folder = PATH_TO_DOWNLOADED_FILES.joinpath(str(message.from_user.id))
+        file_folder.mkdir(parents=True, exist_ok=True)
+        file_path = file_folder.joinpath(f'{file.file_unique_id}.docx')
         await bot.download(file=document.file_id, destination=file_path)
         doc = docx.Document(file_path)
         content = '\n'.join([paragraph.text for paragraph in doc.paragraphs])
@@ -263,7 +266,7 @@ class BotService:
     @staticmethod
     async def WriteFileToDOCX(content, external_id):
         end_path = PATH_TO_TEMP_FILES.joinpath(
-            str(external_id)).joinpath('result.docx')
+            str(external_id)).joinpath(f'result{random.randint(1,10000)}.docx')
         end_path.parent.mkdir(parents=True, exist_ok=True)
         doc = docx.Document()
         doc.add_paragraph(content)
