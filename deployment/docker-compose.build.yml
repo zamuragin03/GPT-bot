@@ -5,13 +5,14 @@ services:
     build: 
       context: ../backend
       dockerfile: Dockerfile
-    container_name: bot
+    container_name: backend
     restart: always
     ports:
       - 80:80
     networks:
       - server
     volumes:
+      - db_backup:/app/db
       - logging:/app/DB_volume
       - users_backup:/app/Users_Files
       - users_result_backup:/app/Users_Sent_Files
@@ -20,10 +21,9 @@ services:
     build: 
       context: ../TelegramBot
       dockerfile: Dockerfile
-    container_name: bot-backend
+    container_name: bot
     restart: always
-    volumes:
-      - db_backup:/app/db
+    
     networks:
       - server
     depends_on:
