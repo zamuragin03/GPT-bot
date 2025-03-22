@@ -23,12 +23,35 @@ class Keyboard:
                 ],
                 [
                     KeyboardButton(
+                        text='Статистика рефералов'),
+                ],
+                [
+                    KeyboardButton(
                         text='Массовая рассылка'),
                 ],
 
             ], one_time_keyboard=True, resize_keyboard=True
         )
         return markup
+    
+    @staticmethod
+    def GetPeriodTypeKb():
+        markup = InlineKeyboardMarkup(inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text='Все время' ,callback_data='all_time')
+            ],
+            [
+                InlineKeyboardButton(
+                    text='В этом месяце' ,callback_data='this_month')
+            ],
+            [
+                InlineKeyboardButton(
+                    text='В прошлом месяце' ,callback_data='last_month')
+            ],
+        ])
+        return markup
+
 
     @staticmethod
     def GetMassMessageConfirmationKeyboard():
@@ -169,6 +192,11 @@ class Keyboard:
                         text=actions[3]['localization'][selected_language], callback_data=actions[3]['callback_data']
                     ),
                 ],
+                [
+                    InlineKeyboardButton(
+                        text=actions[4]['localization'][selected_language], callback_data=actions[4]['callback_data']
+                    ),
+                ],
 
             ]
         )
@@ -291,6 +319,15 @@ class Keyboard:
                     text=el['localization'][selected_language], callback_data=el['callback_data']),
             ] for el in menu
         ])
+        return markup
+
+    @staticmethod
+    def Get_Reasoning_Effort_Kb(selected_language):
+        actions = KeybardText.GetReasoningEffortButtons()
+
+        markup = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text=el['localization'][selected_language],
+                                  callback_data=el['callback_data']) for el in actions]])
         return markup
 
     @staticmethod

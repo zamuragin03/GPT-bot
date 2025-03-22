@@ -6,11 +6,11 @@ import random
 
 
 class PaymentService:
-    def __init__(self, price, user_external_id, is_test=True):
+    def __init__(self, price, user_external_id):
         Configuration.account_id = PAYMENT_SHOP_ID
         Configuration.secret_key = PAYMENT_KEY
         self.price = price
-        self.user_external_id = user_external_id,
+        self.user_external_id = user_external_id
         self.order_id = random.randint(10000, 999999)
         self.description = f'Order #{self.order_id}'
 
@@ -25,7 +25,7 @@ class PaymentService:
                 "currency": "RUB"
             },
             "payment_method_data": {
-                "type": "bank_card"
+                "type": "sbp"
             },
             "confirmation": {
                 "type": "redirect",

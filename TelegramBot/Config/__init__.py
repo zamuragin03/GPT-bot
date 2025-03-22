@@ -9,7 +9,10 @@ from .const import (PATH_TO_DOWNLOADED_FILES,
                     DAILY_LIMITATIONS,
                     PAYMENT_KEY,
                     PAYMENT_SHOP_ID,
-                    GROUP_LINK_URL
+                    GROUP_LINK_URL,
+                    AI_MODELS,
+                    REASONING_EFFORT, 
+                    PATH_TO_TEMP_WATERMARK
                     )
 from .initialize import (bot,
                          dp,

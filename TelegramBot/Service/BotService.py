@@ -1,4 +1,6 @@
-import os
+import itertools
+import time
+from PIL import Image, ImageEnhance, ImageOps
 import re
 from datetime import datetime, timedelta
 import random
@@ -13,7 +15,7 @@ import numpy as np
 from docx.shared import Pt
 import matplotlib.pyplot as plt
 from aiogram.types import FSInputFile
-from Config import PATH_TO_TEMP_FILES, SUBSCRIPTION_LIMITATIONS, GROUP_LINK_URL, DAILY_LIMITATIONS,PATH_TO_DOWNLOADED_FILES
+from Config import PATH_TO_TEMP_FILES, SUBSCRIPTION_LIMITATIONS, GROUP_LINK_URL, DAILY_LIMITATIONS, PATH_TO_DOWNLOADED_FILES, PATH_TO_TEMP_WATERMARK
 from DataModels.ChartCreatorDataModel import ChartResponse
 import matplotlib
 from aiogram import types, Bot
@@ -26,6 +28,8 @@ matplotlib.rc('text.latex', preamble=r'\usepackage{amsmath}')
 
 
 class BotService:
+    progress_indicators = ["◒", "◐", "◓", "◑"]  # Разные символы вращения
+    progress_cycle = itertools.cycle(progress_indicators)
 
     @staticmethod
     def encode_image(image_path):
@@ -33,19 +37,32 @@ class BotService:
             return base64.b64encode(image_file.read()).decode('utf-8')
 
     @staticmethod
+    def invert_image(base_image_path, output_path):
+        """
+        Инвертирует изображение (фон -> черный, текст -> белый).
+        """
+        # Открываем изображение
+        base_image = Image.open(base_image_path).convert("RGB")
+
+        # Инвертируем цвета изображения
+        inverted_image = ImageOps.invert(base_image)
+
+        # Сохраняем инвертированное изображение
+        inverted_image.save(output_path, "JPEG")
+
+    @staticmethod
     def latex_to_image(latex_code, external_id):
+        # Генерация изображения на основе LaTeX
         fig, ax = plt.subplots()
         latex_code = str(latex_code).replace('\n', '')
-        latex_code_lines = latex_code.split(r'\\')  # Разделяем по строкам
-        # Собираем обратно в многострочный формат
+        latex_code_lines = latex_code.split(r'\\')
         full_code = "\n".join(
             [f"${line.strip()}$" for line in latex_code_lines])
 
         ax.text(
             x=0.5, y=0.5,
             s=full_code.replace('$$', '').replace(
-                '\end{align*}', '').replace('\begin{align*}', ''),  # Многострочный LaTeX
-
+                '\end{align*}', '').replace('\begin{align*}', ''),
             horizontalalignment="center",
             verticalalignment="center",
             fontsize=20, ha='center', va='center',
@@ -53,11 +70,71 @@ class BotService:
         ax.axis('off')
         plt.ioff()
         fig.set_size_inches(8, 4)
-        end_path = PATH_TO_TEMP_FILES.joinpath(
+
+        # Сохраняем временное изображение
+        base_path = PATH_TO_TEMP_FILES.joinpath(
             str(external_id)).joinpath('solution.jpg')
-        end_path.parent.mkdir(parents=True, exist_ok=True)
-        plt.savefig(end_path, bbox_inches='tight', pad_inches=0.5, dpi=300)
-        return FSInputFile(path=end_path, filename="solution.jpg")
+        base_path.parent.mkdir(parents=True, exist_ok=True)
+        plt.savefig(base_path, bbox_inches='tight', pad_inches=0.5, dpi=300)
+        plt.close(fig)
+
+        # Инвертируем изображение
+        inverted_path = PATH_TO_TEMP_FILES.joinpath(
+            str(external_id)).joinpath('solution_inverted.jpg')
+        BotService.invert_image(base_image_path=base_path,
+                                output_path=inverted_path)
+
+        # Путь к финальному изображению с водяным знаком
+        final_path = PATH_TO_TEMP_FILES.joinpath(
+            str(external_id)).joinpath('solution_with_watermark.jpg')
+
+        # Путь к файлу водяного знака
+
+        # Наложение водяного знака
+        BotService.add_watermark(base_image_path=inverted_path,
+                                 watermark_path=PATH_TO_TEMP_WATERMARK, output_path=final_path)
+
+        return FSInputFile(path=final_path, filename="solution_with_watermark.jpg")
+
+    def add_watermark(base_image_path, watermark_path, output_path):
+        """
+        Накладывает водяной знак с сохранением пропорций и регулируемой прозрачностью.
+        """
+        from PIL import ImageEnhance
+
+        # Открываем базовое изображение и водяной знак
+        base_image = Image.open(base_image_path).convert("RGBA")
+        watermark = Image.open(watermark_path).convert("RGBA")
+
+        # Масштабируем водяной знак с учётом `contain`
+        base_width, base_height = base_image.size
+        watermark_ratio = min(base_width / watermark.width,
+                              base_height / watermark.height)
+        watermark_width = int(watermark.width * watermark_ratio)
+        watermark_height = int(watermark.height * watermark_ratio)
+        watermark = watermark.resize(
+            (watermark_width, watermark_height), Image.Resampling.LANCZOS)
+
+        # Устанавливаем прозрачность водяного знака
+        alpha = watermark.split()[3]  # Канал альфа (прозрачность)
+        alpha = ImageEnhance.Brightness(alpha).enhance(0.5)  # Прозрачность 15%
+        watermark.putalpha(alpha)
+
+        # Позиция для водяного знака (по центру)
+        position = (
+            (base_width - watermark_width) // 2,
+            (base_height - watermark_height) // 2
+        )
+
+        # Создаём слой для объединения изображений
+        transparent = Image.new("RGBA", base_image.size, (0, 0, 0, 0))
+        transparent.paste(base_image, (0, 0))
+        transparent.paste(watermark, position, watermark)
+
+        # Сохраняем итоговое изображение
+        # Преобразуем в RGB для сохранения в JPEG
+        transparent = transparent.convert("RGB")
+        transparent.save(output_path, "JPEG")
 
     @staticmethod
     def create_image_by_user_requset(result: ChartResponse, external_id: int):
@@ -152,15 +229,18 @@ class BotService:
         first_name = user.first_name
 
         if subscription:
-            limitation_object = TelegramUserSubscriptionService.GetUserLimitations(user.id)
+            limitation_object = TelegramUserSubscriptionService.GetUserLimitations(
+                user.id)
             limits = SUBSCRIPTION_LIMITATIONS
         else:
-            limitation_object = TelegramUserSubscriptionService.GetUserDailyLimitations(user.id)
+            limitation_object = TelegramUserSubscriptionService.GetUserDailyLimitations(
+                user.id)
             limits = DAILY_LIMITATIONS
 
         limitations_remaining = limitation_object.get('limitations')
 
-        localized_text = LocalizationService.BotTexts.GetMyProfileText(selected_language)
+        localized_text = LocalizationService.BotTexts.GetMyProfileText(
+            selected_language)
 
         return localized_text.format(
             first_name=first_name,
@@ -170,29 +250,36 @@ class BotService:
             hours=remained_time['hours'],
             minutes=remained_time['minutes'],
             default_mode=format_limit(limits["default_mode"]),
-            default_mode_remain=limits["default_mode"] - max(0, limitations_remaining["default_mode"]),
+            default_mode_remain=limits["default_mode"] -
+            max(0, limitations_remaining["default_mode"]),
             code_helper=format_limit(limits["code_helper"]),
-            code_helper_remain=limits["code_helper"] - max(0, limitations_remaining["code_helper"]),
+            code_helper_remain=limits["code_helper"] -
+            max(0, limitations_remaining["code_helper"]),
             abstract_writer=format_limit(limits["abstract_writer"]),
-            abstract_writer_remain=limits["abstract_writer"] - max(0, limitations_remaining["abstract_writer"]),
+            abstract_writer_remain=limits["abstract_writer"] -
+            max(0, limitations_remaining["abstract_writer"]),
             course_work_helper=format_limit(limits["course_work_helper"]),
-            course_work_helper_remain=limits["course_work_helper"] - max(0, limitations_remaining["course_work_helper"]),
+            course_work_helper_remain=limits["course_work_helper"] -
+            max(0, limitations_remaining["course_work_helper"]),
             final_paper_helper=format_limit(limits["final_paper_helper"]),
-            final_paper_helper_remain=limits["final_paper_helper"] - max(0, limitations_remaining["final_paper_helper"]),
+            final_paper_helper_remain=limits["final_paper_helper"] -
+            max(0, limitations_remaining["final_paper_helper"]),
             essay_helper=format_limit(limits["essay_helper"]),
-            essay_helper_remain=limits["essay_helper"] - max(0, limitations_remaining["essay_helper"]),
+            essay_helper_remain=limits["essay_helper"] -
+            max(0, limitations_remaining["essay_helper"]),
             photo_issue_helper=format_limit(limits["photo_issue_helper"]),
-            photo_issue_helper_remain=limits["photo_issue_helper"] - max(0, limitations_remaining["photo_issue_helper"]),
+            photo_issue_helper_remain=limits["photo_issue_helper"] -
+            max(0, limitations_remaining["photo_issue_helper"]),
             chart_creator_helper=format_limit(limits["chart_creator_helper"]),
-            chart_creator_helper_remain=limits["chart_creator_helper"] - max(0, limitations_remaining["chart_creator_helper"]),
+            chart_creator_helper_remain=limits["chart_creator_helper"] - max(
+                0, limitations_remaining["chart_creator_helper"]),
             power_point_helper=format_limit(limits["power_point_helper"]),
-            power_point_helper_remain=limits["power_point_helper"] - max(0, limitations_remaining["power_point_helper"]),
+            power_point_helper_remain=limits["power_point_helper"] -
+            max(0, limitations_remaining["power_point_helper"]),
             rewriting_helper=format_limit(limits["rewriting_helper"]),
-            rewriting_helper_remain=limits["rewriting_helper"] - max(0, limitations_remaining["rewriting_helper"])
+            rewriting_helper_remain=limits["rewriting_helper"] -
+            max(0, limitations_remaining["rewriting_helper"])
         )
-
-
-
 
     @staticmethod
     def parse_work_plan(text):
@@ -211,20 +298,6 @@ class BotService:
 
         return "\n".join(result)
 
-    async def countdown(call=None, countdown_message: types.Message = None, duration=250, interval: int = 5, new_text: str = "", finish_text: str = ''):
-        try:
-            for remaining in range(duration, 0, -interval):
-                await asyncio.sleep(interval)
-                formatted_text = new_text.format(
-                    minutes=remaining // 60, seconds=remaining % 60, url=GROUP_LINK_URL)
-                if countdown_message.text != formatted_text:
-                    await countdown_message.edit_text(formatted_text, parse_mode=ParseMode.HTML)
-            await countdown_message.edit_text(finish_text)
-        except Exception as e:
-            print(e)
-        except asyncio.CancelledError:
-            pass
-
     @staticmethod
     def getChangeLanguageText():
         ...
@@ -233,7 +306,8 @@ class BotService:
     async def GetTXTFileContent(bot: Bot, message: types.Message):
         document = message.document
         file = await bot.get_file(document.file_id)
-        photo_folder = PATH_TO_DOWNLOADED_FILES.joinpath(str(message.from_user.id))
+        photo_folder = PATH_TO_DOWNLOADED_FILES.joinpath(
+            str(message.from_user.id))
         photo_folder.mkdir(parents=True, exist_ok=True)
         file_path = photo_folder.joinpath(f'{file.file_unique_id}.jpg')
         await bot.download(file=document.file_id, destination=file_path)
@@ -254,7 +328,8 @@ class BotService:
     async def GetWordFileContent(bot: Bot, message: types.Message):
         document = message.document
         file = await bot.get_file(document.file_id)
-        file_folder = PATH_TO_DOWNLOADED_FILES.joinpath(str(message.from_user.id))
+        file_folder = PATH_TO_DOWNLOADED_FILES.joinpath(
+            str(message.from_user.id))
         file_folder.mkdir(parents=True, exist_ok=True)
         file_path = file_folder.joinpath(f'{file.file_unique_id}.docx')
         await bot.download(file=document.file_id, destination=file_path)
@@ -300,3 +375,103 @@ class BotService:
             verbosity=LocalizationService.BotTexts.GetPPTXVerbosityHR(
                 verbosity, selected_language) if verbosity else not_specified
         )
+
+    @staticmethod
+    async def run_with_progress(message, task, total_time, *args, **kwargs):
+        """
+        Метод для отображения прогресс-бара с заданным временем, выполнения задачи и удаления сообщения.
+
+        :param message: Сообщение, куда отправлять прогресс
+        :param task: Асинхронная задача, которую нужно выполнить
+        :param total_time: Общее время выполнения в секундах
+        :param args: Аргументы для задачи
+        :param kwargs: Именованные аргументы для задачи
+        """
+        progress_indicators = ["◒", "◐", "◓", "◑"]
+        progress_cycle = itertools.cycle(progress_indicators)
+        total_steps = 10  # Количество шагов для прогресс-бара
+        step_time = total_time / total_steps  # Время на один шаг
+        start_time = time.time()
+
+        # Отправляем начальное сообщение
+        progress_message = await message.answer("Прогресс начат...")
+
+        for i in range(total_steps + 1):
+            # Вычисляем оставшееся время
+            remaining_time = max(total_time - (time.time() - start_time), 0)
+
+            # Генерируем прогресс-бар и анимацию
+            progress_bar = BotService.create_progress_bar(i, total_steps)
+            animated_indicator = next(progress_cycle)
+
+            # Обновляем текст сообщения
+            await progress_message.edit_text(
+                f"{progress_bar} {animated_indicator} (Осталось: {remaining_time:.1f} сек)"
+            )
+
+            # Задержка на заданный интервал
+            if remaining_time > 0:
+                await asyncio.sleep(step_time)
+
+        # Выполняем задачу
+        result = await task(*args, **kwargs)
+
+        # Удаляем сообщение с прогресс-баром
+        await progress_message.delete()
+
+        # Возвращаем результат выполнения задачи
+        return result
+
+    @staticmethod
+    def create_progress_bar(progress, total=10):
+        """Создает строку с индикатором прогресса (эмодзи)."""
+        filled_char = '⬛️'  # Черный квадрат
+        empty_char = '⬜️'   # Белый квадрат
+        filled_length = int(progress / total * total)
+        empty_length = total - filled_length
+        return filled_char * filled_length + empty_char * empty_length + f" {int(progress / total * 100)}%"
+
+    async def send_long_message(target, text: str, parse_mode: str = None, disable_web_page_preview: bool = False, reply_markup=None):
+        """
+        Отправляет длинное сообщение в несколько батчей, поддерживая как Message, так и CallbackQuery.
+
+        :param target: Объект типа `types.Message` или `types.CallbackQuery`.
+        :param text: Текст сообщения.
+        :param parse_mode: Режим разметки текста (например, Markdown или HTML).
+        :param disable_web_page_preview: Отключение предпросмотра веб-страниц.
+        """
+        max_length = 4096  # Максимальная длина сообщения в Telegram
+
+        # Разбиваем текст на батчи
+        text_batches = [text[i:i + max_length]
+                        for i in range(0, len(text), max_length)]
+
+        # Определяем метод отправки в зависимости от типа объекта
+        send_method = (
+            target.reply if isinstance(
+                target, types.Message) else target.message.reply
+        )
+
+        # Отправляем каждую часть сообщения
+        for batch in text_batches:
+            await send_method(
+                text=batch,
+                parse_mode=parse_mode,
+                disable_web_page_preview=disable_web_page_preview, reply_markup=reply_markup
+            )
+
+    def formatReferals(referal_obj: list, period:str):
+        translation = {
+            'last_month': 'в прошлом месяце',
+            'this_month': 'в этом месяце',
+            'all_time': 'за все время'
+        }
+        message = f"Топ рефералов{translation[period]} :\n"
+        for i, referral in enumerate(referal_obj, start=1):
+            username = referral.get('referal__username', 'Не указан')
+            external_id = referral.get('referal__external_id', 'Не указан')
+            invite_count = referral.get('invite_count', 0)
+            message += f"{i}. Имя: {username}, ID: {external_id}, Кол-во приглашенных: {invite_count}\n"
+        if len(referal_obj)==0:
+            message+='Данных нет'
+        return message

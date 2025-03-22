@@ -18,6 +18,7 @@ from aiogram import types
     F.data == 'buy',
     FSMUser.choosing_action_with_sub
 )
+
 async def buy_subcription(call: types.CallbackQuery, state: FSMContext, ):
     data = await state.get_data()
     payment_text = LocalizationService.BotTexts.GetPaymentText(
@@ -33,6 +34,7 @@ async def buy_subcription(call: types.CallbackQuery, state: FSMContext, ):
         price=subscription.get('price'),
         created_at=datetime.now().strftime('%d/%m/%Y, %H:%M:%S')
     )
+    await state.set_state(FSMUser.in_payment)
     await call.message.edit_text(
         text=payment_text_formatted,
         reply_markup=Keyboard.GetPaymentKeyboard(

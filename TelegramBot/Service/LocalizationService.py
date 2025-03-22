@@ -47,6 +47,10 @@ class LocalizationService:
         @staticmethod
         def GetCodeHelperActions():
             return BUTTON_LOCALIZATION_JSON["code_helper_actions"]
+        
+        @staticmethod
+        def GetReasoningEffortButtons():
+            return BUTTON_LOCALIZATION_JSON["change_reasoning_effort"]
 
         @staticmethod
         def GetMyProfileActions():
@@ -153,6 +157,10 @@ class LocalizationService:
         @staticmethod
         def GetClearContextText(selected_language):
             return TEXT_LOCALIZATION_JSON["clear_context"][selected_language]
+        
+        @staticmethod
+        def GetReasoningEffortText(selected_language):
+            return TEXT_LOCALIZATION_JSON["change_reasoning_effort_text"][selected_language]
 
         @staticmethod
         def GetSubscriptionRequirements(selected_language):
@@ -213,6 +221,10 @@ class LocalizationService:
         @staticmethod
         def GetCancellationText(selected_language):
             return TEXT_LOCALIZATION_JSON["generation_cancelled"][selected_language]
+
+        @staticmethod
+        def GetCancellationText(selected_language):
+            return TEXT_LOCALIZATION_JSON["reasonong_effort_changed_succesfully"][selected_language]
 
         @staticmethod
         def GetCourseWorkWelcomeHelperText(selected_language):
@@ -313,3 +325,7 @@ class LocalizationService:
         @staticmethod
         def GetDefaultHelperText(selected_language) -> str:
             return TEXT_LOCALIZATION_JSON['default_mode_helper'][selected_language]
+
+        @staticmethod
+        def GetLimitedContextText(selected_language) -> str:
+            return TEXT_LOCALIZATION_JSON['context_reached_limit'][selected_language]

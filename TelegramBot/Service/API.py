@@ -121,6 +121,12 @@ class AdminTelegramUserAPI:
                             headers={"Content-type": "application/json",
                                      "Authorization": f"Token {AUTH_TOKEN}"},
                             ).json()
+        
+    def GetReferalStatistic(query_type:str) -> dict:
+        return requests.get(PROXY+f'referal_statistics?type={query_type}',
+                            headers={"Content-type": "application/json",
+                                     "Authorization": f"Token {AUTH_TOKEN}"},
+                            ).json()
 
 
 class PromocodeAPI:

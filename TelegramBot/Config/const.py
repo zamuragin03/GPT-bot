@@ -13,6 +13,7 @@ if sys.argv[1] == '--dev':
     config.read(str(PATH) + "/config_dev.ini")
 BOT_TOKEN = config["Telegram"]["bot_token"]
 
+PATH_TO_TEMP_WATERMARK = PATH.joinpath('watermark.png')
 PATH_TO_TEMP_FILES = PATH.parent.joinpath('Users_Files')
 PATH_TO_DOWNLOADED_FILES = PATH.parent.joinpath('Users_Sent_Files')
 PATH_TO_LOCALIZATION = PATH.parent.joinpath('Localization')
@@ -51,3 +52,16 @@ DAILY_LIMITATIONS = {
     "power_point_helper": NO_ACCESS,
     "rewriting_helper": NO_ACCESS,
 }
+
+
+from enum import Enum
+
+class AI_MODELS(Enum):
+    O_3_MINI = 'o3-mini'
+    GPT_4_O = 'gpt-4o'
+    GPT_4_O_MINI = 'gpt-4o-mini'
+
+class REASONING_EFFORT(Enum):
+    LOW = 'low'
+    MEDIUM = 'medium'
+    HIGHT = 'high'

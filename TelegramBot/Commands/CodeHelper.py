@@ -1,12 +1,12 @@
 import asyncio
 from Config import dp, bot, gpt_router, GROUP_LINK_URL
-from Keyboards.keyboards import Keyboard
+from Keyboards import Keyboard, KeyboardService
 from aiogram import F
 from States import FSMCodeHelper
 from aiogram.fsm.context import FSMContext
 from aiogram.filters import *
 from aiogram.types import FSInputFile
-from Service import LocalizationService, CodeHelperGPTService, CustomFilters, BotService
+from Service import LocalizationService, CodeHelperGPTService, CustomFilters, BotService, TelegramUserService
 
 from aiogram.enums.parse_mode import ParseMode
 from aiogram import types
@@ -21,30 +21,24 @@ from aiogram import types
 )
 async def typing_message(message: types.Message, state: FSMContext):
     data = await state.get_data()
-    typing_text = LocalizationService.BotTexts.GenerationTextByWorkType(data.get('language','ru'), 'code', 'start')
-    demand_minutes, demand_seconds = 0, 10
-    finish_text = LocalizationService.BotTexts.GenerationTextByWorkType(data.get('language','ru'), 'code', 'finish')
-    countdown_message = await message.answer(typing_text.format(
-        minutes=demand_minutes,
-        seconds=demand_seconds,
-        url=GROUP_LINK_URL
-    ),parse_mode=ParseMode.HTML)
-    countdown_task = asyncio.create_task(
-        BotService.countdown(call=None,
-                             countdown_message=countdown_message, duration=demand_minutes*60+demand_seconds, interval=1,
-                             new_text=typing_text, finish_text=finish_text))
     code_helper: CodeHelperGPTService = data.get('code_helper')
-    response = await code_helper.generate_response(message.text)
-    await message.answer(
-        response,
-        reply_markup=Keyboard.Code_helper_buttons(data.get('language','ru')),
-        parse_mode=ParseMode.MARKDOWN,
+    if code_helper.check_if_context_limit_reached():
+        await message.reply(
+            text=LocalizationService.BotTexts.GetLimitedContextText(data.get('language', 'ru')),
+            reply_markup=Keyboard.Code_helper_buttons(data.get('language','ru')),
+        )
+        return
+    code_helper.add_message(message.text)
+    result = await BotService.run_with_progress(
+        message=message,
+        total_time=15,
+        task=code_helper.generate_response,
     )
-    countdown_task.cancel()
-    try:
-        await countdown_message.delete()
-    except Exception as e:
-        pass
+    await BotService.send_long_message(message,
+        result,
+        reply_markup=Keyboard.Code_helper_buttons(data.get('language','ru')),
+        parse_mode=ParseMode.HTML,
+    )
 
 
 @gpt_router.callback_query(
@@ -58,7 +52,7 @@ async def clear_context(call: types.CallbackQuery, state: FSMContext):
     await call.answer(
         LocalizationService.BotTexts.GetCodeHelperAutoSaveText(call.data, data.get('language','ru')),
         reply_markup=Keyboard.Clear_Context_kb(data.get('language','ru')),
-        parse_mode=ParseMode.MARKDOWN,
+        parse_mode=ParseMode.HTML,
         show_alert=True
     )
 
@@ -74,6 +68,42 @@ async def clear_context(call: types.CallbackQuery, state: FSMContext):
     await call.answer(
         LocalizationService.BotTexts.GetClearContextText(data.get('language','ru')),
         reply_markup=Keyboard.Clear_Context_kb(data.get('language','ru')),
-        parse_mode=ParseMode.MARKDOWN,
+        parse_mode=ParseMode.HTML,
         show_alert=True
     )
+
+
+@gpt_router.callback_query(
+    FSMCodeHelper.typing_message,
+    F.data == 'change_reasoning_effort',
+)
+async def change_reasoning_effort(call: types.CallbackQuery, state: FSMContext):
+    user = TelegramUserService.GetTelegramUserByExternalId(call.from_user.id)
+    await call.message.answer(
+        text=LocalizationService.BotTexts.GetReasoningEffortText(
+            user.get('language')),
+        reply_markup=Keyboard.Get_Reasoning_Effort_Kb(user.get('language')),
+        parse_mode=ParseMode.HTML,
+    )
+    await state.set_state(FSMCodeHelper.choosing_reasoning_effort)
+
+
+@gpt_router.callback_query(
+    FSMCodeHelper.choosing_reasoning_effort,
+    F.data.in_(KeyboardService.get_reasoning_options()),
+)
+async def change_reasoning_effort(call: types.CallbackQuery, state: FSMContext):
+    user = TelegramUserService.GetTelegramUserByExternalId(call.from_user.id)
+    data = await state.get_data()
+    code_helper: CodeHelperGPTService = data.get(
+        'code_helper')
+    code_helper.change_reasoning_effort(call.data)  
+    await call.answer(
+        text=LocalizationService.BotTexts.GetCancellationText(
+            user.get('language')),
+        reply_markup=Keyboard.Get_Reasoning_Effort_Kb(user.get('language')),
+        parse_mode=ParseMode.HTML,
+        show_alert=True
+    )
+    await call.message.delete()
+

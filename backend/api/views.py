@@ -53,6 +53,7 @@ class GetSubscription(SubscriptionBaseModel, generics.RetrieveAPIView):
 
 class CreatePayment(PaymentBaseModel, generics.CreateAPIView):
     def post(self, request, format=None):
+        print(request.data)
         data = request.data.copy()
 
         external_id = data.pop('external_id', None)
@@ -338,16 +339,44 @@ class CheckReferals(APIView):
             return Response({"referal_count": 0}, status=status.HTTP_200_OK)
 
 
+class TopReferralsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, format=None):
+        # Получаем query-параметр
+        referral_type = request.query_params.get('type', None)
+
+        # Проверяем параметр и вызываем соответствующую функцию
+        if referral_type == "all_time":
+            data = StatisticService.get_top_referrals_all_time()
+            return Response(data)
+        elif referral_type == "this_month":
+            data = StatisticService.get_top_referrals_this_month()
+            return Response(data)
+        elif referral_type == "last_month":
+            data = StatisticService.get_top_referrals_last_month()
+            return Response( data)
+        else:
+            return Response({"error": "Invalid type parameter. Use 'all_time', 'this_month', or 'last_month'."}, status=400)
+
+
 class StatisticsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, format=None):
         statistics = {
-            "alive_users": StatisticService.get_alive_users_count(),
-            "active_users_today": StatisticService.get_active_users_today(),
+            "total_users": StatisticService.get_total_users(),
+            "unbanned_users": StatisticService.get_unbanned_users(),
+            "registered_today": StatisticService.get_registered_today_count(),
             "new_users_current_month": StatisticService.get_new_users_current_month(),
             "new_users_last_month": StatisticService.get_new_users_last_month(),
-            "users_via_referral": StatisticService.get_users_via_referral(),
+            "current_month_subscribers": StatisticService.current_month_subscribers_count(),
+            "last_month_subscribers": StatisticService.last_month_subscribers_count(),
+            "today_subscribers": StatisticService.today_subscribers_count(),
+            "today_subscribers_bought": StatisticService.today_subscribers_bought_count(),
+            "this_month_subscribers_bought": StatisticService.this_month_subscribers_bought_count(),
+            "last_month_subscribers_bought": StatisticService.last_month_subscribers_bought_count(),
+            "active_subscribers": StatisticService.get_active_subscribers_count(),
             "admins_count": StatisticService.get_admins_count(),
             "requests_today": StatisticService.get_requests_today(),
             "requests_yesterday": StatisticService.get_requests_yesterday(),
@@ -357,5 +386,8 @@ class StatisticsView(APIView):
             "tokens_spent_current_month": StatisticService.get_tokens_spent_current_month(),
             "tokens_spent_last_month": StatisticService.get_tokens_spent_last_month(),
             "income_today": StatisticService.get_income_today(),
+            "income_yesterday": StatisticService.get_income_yesterday(),
+            "last_month_revenue": StatisticService.get_last_month_revenue(),
+            "total_revenue": StatisticService.get_total_revenue(),
         }
         return Response(statistics)

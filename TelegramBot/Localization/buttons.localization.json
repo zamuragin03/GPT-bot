@@ -35,7 +35,7 @@
             "callback_data": "code_helper",
             "localization": {
                 "ru": "Помощь при написании кода 💻",
-                "en": "Help with writing code"
+                "en": "Help with writing code 💻"
             }
         },
         {
@@ -56,7 +56,7 @@
             "callback_data": "course_work_helper",
             "localization": {
                 "ru": "Написание курсовых работ 📔",
-                "en": "Course work writing"
+                "en": "Course work writing 📔"
             }
         },
         {
@@ -83,7 +83,7 @@
         {
             "callback_data": "chart_creator_helper",
             "localization": {
-                "ru": "Построение графиков📈",
+                "ru": "Построение графиков 📈",
                 "en": "Plotting graphs 📈"
             }
         },
@@ -97,8 +97,8 @@
         {
             "callback_data": "default_mode",
             "localization": {
-                "ru": "Обычный режим🧑‍🎓",
-                "en": "Default mode🧑‍🎓"
+                "ru": "Обычный режим 🧑‍🎓",
+                "en": "Default mode 🧑‍🎓"
             }
         },
         {
@@ -118,15 +118,15 @@
         "en": "Channel"
     },
     "did_subscribe": {
-        "ru": "✅Подписался",
-        "en": "✅Done"
+        "ru": "Вы подписались на канал ✅",
+        "en": "You have subscribed to the channel ✅"
     },
     "my_profile": [
         {
             "callback_data": "change_language",
             "localization": {
                 "ru": "Изменить язык",
-                "en": "Change the language "
+                "en": "Change the language"
             }
         },
         {
@@ -167,15 +167,15 @@
         {
             "callback_data": "proceed_generation",
             "localization": {
-                "ru": "Подтвердить",
-                "en": "Confirm"
+                "ru": "Подтвердить ✅",
+                "en": "Confirm ✅"
             }
         },
         {
             "callback_data": "cancel_generation",
             "localization": {
-                "ru": "Отменить генерацию",
-                "en": "Cancel generation"
+                "ru": "Отменить генерацию ❌",
+                "en": "Cancel generation ❌"
             }
         }
     ],
@@ -183,15 +183,15 @@
         {
             "callback_data": "confirm_plan",
             "localization": {
-                "ru": "Подтвердить",
-                "en": "Confirm"
+                "ru": "Подтвердить ✅",
+                "en": "Confirm ✅"
             }
         },
         {
             "callback_data": "genereate_new_plan",
             "localization": {
-                "ru": "Отменить генерацию",
-                "en": "Cancel generation"
+                "ru": "Отменить генерацию ❌",
+                "en": "Cancel generation ❌"
             }
         }
     ],
@@ -222,8 +222,8 @@
         {
             "callback_data": "confirm",
             "localization": {
-                "ru": "Подтвердить",
-                "en": "confirm"
+                "ru": "Подтвердить ✅",
+                "en": "Confirm ✅"
             }
         }
     ],
@@ -264,8 +264,8 @@
         {
             "callback_data": "buy",
             "localization": {
-                "ru": "Ваш Личный помощник - {price} руб",
-                "en": "Your Personal Assistant - {price} rub"
+                "ru": "Ваш персональный академический помощник StudentHelper 🧑‍💻 - {price} руб",
+                "en": "Your personal academic assistant StudentHelper 🧑‍💻 - {price} rub"
             }
         },
         {
@@ -299,6 +299,13 @@
             }
         },
         {
+            "callback_data": "change_reasoning_effort",
+            "localization": {
+                "ru": "Изменить усилие рассуждения",
+                "en": "Change the reasoning effort"
+            }
+        },
+        {
             "callback_data": "clear_context",
             "localization": {
                 "ru": "Удалить сохраненое 🟥",
@@ -321,7 +328,7 @@
         {
             "callback_data": "generate_presentation",
             "localization": {
-                "ru": "Cегнерировать презентацию",
+                "ru": "Cгенерировать презентацию",
                 "en": "Generate presentation"
             }
         },
@@ -464,6 +471,29 @@
             "localization": {
                 "ru": "Сгенерировать презентацию",
                 "en": "Generate presentation"
+            }
+        }
+    ],
+    "change_reasoning_effort":[
+        {
+            "callback_data": "low",
+            "localization": {
+                "ru": "Низкое",
+                "en": "Low"
+            }
+        },
+        {
+            "callback_data": "medium",
+            "localization": {
+                "ru": "Среднее",
+                "en": "Medium"
+            }
+        },
+        {
+            "callback_data": "high",
+            "localization": {
+                "ru": "Высокое",
+                "en": "High"
             }
         }
     ]

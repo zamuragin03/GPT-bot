@@ -7,12 +7,15 @@ class FSMUser(StatesGroup):
     select_mode = State()
     in_fereal_sytem = State()
     choosing_action_with_sub = State()
+    in_payment = State()
     typing_promocode = State()
     choosing_action_with_my_profile = State()
+    choosing_reasoning_effort = State()
 
 
 class FSMCodeHelper(StatesGroup):
     typing_message = State()
+    choosing_reasoning_effort = State()
 
 
 class FSMChartCreator(StatesGroup):
@@ -57,6 +60,7 @@ class FSMPhotoProblem(StatesGroup):
 class FSMRewritingHelper(StatesGroup):
     sending_document = State()
 
+
 class FSMPPTXHelper(StatesGroup):
     choosing_action = State()
     typing_topic = State()
@@ -67,4 +71,3 @@ class FSMPPTXHelper(StatesGroup):
     change_template = State()
     change_fetch_images = State()
     change_tone = State()
-    

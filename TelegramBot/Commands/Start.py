@@ -135,10 +135,50 @@ async def instuments(message: types.Message, state: FSMContext):
     await state.set_state(FSMUser.select_mode)
 # Инструменты и коллбэк на inline кнопки
 
+# Обработка приобретения подписки
+@router.message(
+    FSMUser.choosing_action,
+    F.text.in_(KeyboardService.get_menu_option_localization('buy_subscription'))
+)
+@router.message(
+    F.text.in_(KeyboardService.get_menu_option_localization('buy_subscription'))
+)
+async def buy_subscription(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    subscription_text = LocalizationService.BotTexts.SubscriptionText(
+        data.get('language', 'ru'))
+    subscription = SubscriptionTypeService.GetSubscriptionByDuration(168)
+    await message.answer(
+        text=subscription_text,
+        parse_mode='HTML',
+        reply_markup=Keyboard.GetSubscriptionButton(
+            data.get('language', 'ru'), subscription.get('price'))
+    )
+    await state.set_state(FSMUser.choosing_action_with_sub)
+    
+@router.callback_query(
+    F.data == 'back_to_menu',
+    FSMUser.typing_promocode,
+)
 
 @router.callback_query(
-    FSMUser.choosing_language,
+    F.data == 'back_to_menu',
+    FSMUser.in_payment
 )
+async def buy_subscription(call: types.CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    subscription_text = LocalizationService.BotTexts.SubscriptionText(
+        data.get('language', 'ru'))
+    subscription = SubscriptionTypeService.GetSubscriptionByDuration(168)
+    await call.message.edit_text(
+        text=subscription_text,
+        parse_mode='HTML',
+        reply_markup=Keyboard.GetSubscriptionButton(
+            data.get('language', 'ru'), subscription.get('price'))
+    )
+    await state.set_state(FSMUser.choosing_action_with_sub)
+
+
 @router.callback_query(
     FSMUser.in_fereal_sytem,
 )
@@ -147,16 +187,31 @@ async def instuments(message: types.Message, state: FSMContext):
     F.data == 'back_to_menu'
 )
 @router.callback_query(
+    F.data == 'back_to_menu',
+    FSMUser.choosing_action_with_sub
+)
+@router.callback_query(
+    F.data == 'back_to_menu'
+)
+@router.callback_query(
     F.data == 'back_to_menu'
 )
 async def menu(call: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
-    language_codes = LocalizationService.KeyboardTexts.GetLanguages()
-    language_codes = [el.get('lang_data') for el in language_codes]
-    # language_codes returns ['ru', 'en',...]
-    if data.get('language') is None or call.data in language_codes:
-        await state.update_data(language=call.data)
-        TelegramUserService.SetUserLanguage(call.from_user.id, call.data)
+    await call.message.answer(
+        text='Выберите действие',
+        reply_markup=Keyboard.Get_Menu(data.get('language', 'ru'))
+    )
+    await state.set_state(FSMUser.choosing_action)
+    
+@router.callback_query(
+    FSMUser.choosing_language,
+    F.data.in_(KeyboardService.get_language_codes())
+)
+async def menu(call: types.CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    await state.update_data(language=call.data)
+    TelegramUserService.SetUserLanguage(call.from_user.id, call.data)
     data = await state.get_data()
     is_new_user = TelegramUserSubscriptionService.IsUserNew(
         call.from_user.id)
@@ -166,13 +221,15 @@ async def menu(call: types.CallbackQuery, state: FSMContext):
         sub_activated_text = LocalizationService.BotTexts.SubscriptionActivated(
             data.get('language', 'ru'))
         await call.message.answer(
-            text=sub_activated_text
+            text=sub_activated_text,
+            reply_markup=Keyboard.Get_Menu(data.get('language', 'ru'))
         )
     await call.message.answer(
         text='Выберите действие',
         reply_markup=Keyboard.Get_Menu(data.get('language', 'ru'))
     )
     await state.set_state(FSMUser.choosing_action)
+
 
 # handle message with code helper
 
@@ -334,26 +391,7 @@ async def invite_friend(message: types.Message, state: FSMContext):
     await state.set_state(FSMUser.in_fereal_sytem)
 
 
-# Обработка приобретения подписки
-@router.message(
-    FSMUser.choosing_action,
-    F.text.in_(KeyboardService.get_menu_option_localization('buy_subscription'))
-)
-@router.message(
-    F.text.in_(KeyboardService.get_menu_option_localization('buy_subscription'))
-)
-async def buy_subscription(message: types.Message, state: FSMContext):
-    data = await state.get_data()
-    subscription_text = LocalizationService.BotTexts.SubscriptionText(
-        data.get('language', 'ru'))
-    subscription = SubscriptionTypeService.GetSubscriptionByDuration(168)
-    await message.answer(
-        text=subscription_text,
-        parse_mode='HTML',
-        reply_markup=Keyboard.GetSubscriptionButton(
-            data.get('language', 'ru'), subscription.get('price'))
-    )
-    await state.set_state(FSMUser.choosing_action_with_sub)
+
 
 
 @router.callback_query(
@@ -362,8 +400,8 @@ async def buy_subscription(message: types.Message, state: FSMContext):
 )
 async def setup_promocode(call: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
-    await call.message.answer(
-        text='Отправьте промокод,',
+    await call.message.edit_text(
+        text='Отправьте промокод',
         parse_mode='HTML',
         reply_markup=Keyboard.Get_Back_Button(data.get('language', 'ru'))
     )

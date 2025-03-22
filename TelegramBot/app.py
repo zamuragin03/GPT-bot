@@ -26,8 +26,8 @@ async def on_startup(dispatcher: Dispatcher):
 
     dp.include_router(router)
     # router.message.middleware(CaptchaMiddleWare())
-    router.message.middleware(SubscriptionMiddleware())
-    router.callback_query.middleware(SubscriptionMiddleware())
+    dp.message.middleware(SubscriptionMiddleware())
+    dp.callback_query.middleware(SubscriptionMiddleware())
 
     dp.include_router(gpt_router)
     gpt_router.message.middleware(GPTSubscriptionMiddleware())

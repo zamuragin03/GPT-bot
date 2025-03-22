@@ -184,32 +184,13 @@ async def handleRequestAbstract(call: types.CallbackQuery, state: FSMContext):
 )
 async def handleRequestAbstract(call: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
-    typing_text = LocalizationService.BotTexts.GenerationTextByWorkType(
-        data.get('language','ru'), 'abstract', 'start')
-    demand_minutes, demand_seconds = 1, 10
-    finish_text = LocalizationService.BotTexts.GenerationTextByWorkType(
-        data.get('language','ru'), 'abstract', 'finish')
-    countdown_message = await call.message.answer(typing_text.format(
-        minutes=demand_minutes,
-        seconds=demand_seconds,
-        url=GROUP_LINK_URL
-    ), parse_mode=ParseMode.HTML)
-    countdown_task = asyncio.create_task(
-        BotService.countdown(call=None,
-                             countdown_message=countdown_message,
-                             duration=demand_minutes*60+demand_seconds,
-                             interval=1,
-                             new_text=typing_text,
-                             finish_text=finish_text)
-    )
-    data = await state.get_data()
     abstract_service: AbstractWorkGPTService = data.get('abstract_service')
-    result = await abstract_service.build_abstract_work()
-    countdown_task.cancel()
-    try:
-        await countdown_message.delete()
-    except Exception as e:
-        pass
+    result = await BotService.run_with_progress(
+        message=call.message,
+        total_time=15,
+        task=abstract_service.build_abstract_work
+    )
+
 
     doc_creator = GOSTWordDocument(result)
     doc_creator.create_document()

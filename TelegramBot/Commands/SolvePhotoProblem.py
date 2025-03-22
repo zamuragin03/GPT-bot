@@ -17,26 +17,7 @@ from Service import SolvePhotoGPTService, DefaultModeGPTService, LocalizationSer
 )
 async def handlePhoto(message: types.Message, state: FSMContext):
     data = await state.get_data()
-
     await bot.send_chat_action(message.chat.id, action="typing")
-    typing_text = LocalizationService.BotTexts.GenerationTextByWorkType(
-        data.get('language','ru'), 'photo_math', 'start')
-    demand_minutes, demand_seconds = 0, 35
-    finish_text = LocalizationService.BotTexts.GenerationTextByWorkType(
-        data.get('language','ru'), 'photo_math', 'finish')
-    countdown_message = await message.answer(typing_text.format(
-        minutes=demand_minutes,
-        seconds=demand_seconds,
-        url=GROUP_LINK_URL
-    ), parse_mode=ParseMode.HTML)
-    countdown_task = asyncio.create_task(
-        BotService.countdown(call=None,
-                             countdown_message=countdown_message,
-                             duration=demand_minutes*60+demand_seconds,
-                             interval=2,
-                             new_text=typing_text,
-                             finish_text=finish_text)
-    )
     photo = message.photo[-1]
     photo_folder = PATH_TO_DOWNLOADED_FILES.joinpath(str(message.from_user.id))
     photo_folder.mkdir(parents=True, exist_ok=True)
@@ -54,6 +35,7 @@ async def handlePhoto(message: types.Message, state: FSMContext):
             parse_mode=ParseMode.MARKDOWN
         )
     except Exception as e:
+        print(e)
         await message.answer(text='trying another way')
         # Проверка наличия объекта code_helper в состоянии
         default_mode_helper = data.get('default_mode_helper')
@@ -73,8 +55,3 @@ async def handlePhoto(message: types.Message, state: FSMContext):
             )
         except:
             pass
-    countdown_task.cancel()
-    try:
-        await countdown_message.delete()
-    except Exception as e:
-        pass

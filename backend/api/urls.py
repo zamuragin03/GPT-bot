@@ -52,4 +52,5 @@ urlpatterns = [
 
     # statistics
     path('statistics/', StatisticsView.as_view(), name='statistics'),
+    path('referal_statistics/', TopReferralsView.as_view(), name='statistics'),
 ]
