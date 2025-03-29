@@ -7,6 +7,7 @@ from .FSMUser import (FSMUser,
                       FSMCourseWorkHelper,
                       FSMRewritingHelper,
                       FSMEssayhelper,
-                      FSMPPTXHelper
+                      FSMPPTXHelper,
+                      FSMAntiplagitHelper
                       )
 from .FSMWorker import FSMWorker

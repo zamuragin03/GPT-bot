@@ -1,9 +1,9 @@
 
 import asyncio
-from Config import dp, bot, gpt_router, PATH_TO_TEMP_FILES,GROUP_LINK_URL
+from Config import dp, bot, gpt_router, router, PATH_TO_TEMP_FILES, GROUP_LINK_URL
 from Keyboards.keyboards import Keyboard, Callbacks
 from aiogram import F
-from States import FSMEssayhelper
+from States import FSMEssayhelper, FSMUser
 from aiogram.fsm.context import FSMContext
 from aiogram.filters import *
 from aiogram.types import FSInputFile
@@ -11,9 +11,24 @@ from aiogram.enums.parse_mode import ParseMode
 from aiogram.enums.content_type import ContentType
 from aiogram import types
 from Service import LocalizationService
-from Service.BotService import BotService
-from Service import EssayGPTService
-from Service import GOSTWordEssayDocument
+from Service import BotService, EssayGPTService, CustomFilters,GOSTWordEssayDocument
+
+
+@router.callback_query(
+    FSMUser.select_mode,
+    F.data == 'essay_helper',
+    CustomFilters.gptTypeFilter('essay_helper')
+)
+async def chart_creator_helper(call: types.CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    abstract_helper_text = LocalizationService.BotTexts.GetEssayWelcomeHelperText(
+        data.get('language', 'ru'))
+    await call.message.edit_text(
+        text=abstract_helper_text,
+        reply_markup=Keyboard.GenerateWorkButton(
+            call.data, data.get('language', 'ru'))
+    )
+    await state.set_state(FSMEssayhelper.choosing_action)
 
 
 @gpt_router.callback_query(
@@ -68,12 +83,12 @@ async def SelectPageumber(call: types.CallbackQuery, state: FSMContext, callback
 @gpt_router.callback_query(
     F.data == 'regenerate',
     FSMEssayhelper.choosing_action_with_plan
-    
+
 )
 async def set_plan(call: types.CallbackQuery, state: FSMContext,):
     data = await state.get_data()
     manual_plan = LocalizationService.BotTexts.GetAbstractManualPlan(
-        data.get('language','ru'))
+        data.get('language', 'ru'))
     await call.message.edit_text(manual_plan,)
     await state.set_state(FSMEssayhelper.typing_manual_plan)
 
@@ -83,7 +98,7 @@ async def set_plan(call: types.CallbackQuery, state: FSMContext,):
 )
 async def retrieving_manual_plan(message: types.Message, state: FSMContext,):
     data = await state.get_data()
-    thinking_message = await message.answer(LocalizationService.BotTexts.CreatingPlanMessage(data.get('language','ru')))
+    thinking_message = await message.answer(LocalizationService.BotTexts.CreatingPlanMessage(data.get('language', 'ru')))
     user_text = message.text
     essay_service = data.get('essay_service')
 
@@ -97,11 +112,11 @@ async def retrieving_manual_plan(message: types.Message, state: FSMContext,):
     plan = await essay_service.get_plan_response()
     parsed_plan = BotService.parse_work_plan(plan)
     await message.answer(
-        LocalizationService.BotTexts.GetPlanScheme(data.get('language','ru'))
+        LocalizationService.BotTexts.GetPlanScheme(data.get('language', 'ru'))
     )
     await message.answer(
         parsed_plan,
-        reply_markup=Keyboard.ActionsWithDonePlan(data.get('language','ru'),),
+        reply_markup=Keyboard.ActionsWithDonePlan(data.get('language', 'ru'),),
         parse_mode=ParseMode.HTML
     )
     await bot.delete_message(chat_id=message.chat.id, message_id=thinking_message.message_id)
@@ -113,7 +128,7 @@ async def retrieving_manual_plan(message: types.Message, state: FSMContext,):
     FSMEssayhelper.choosing_plan_generation
 )
 async def auto_plan(call: types.CallbackQuery, state: FSMContext,):
-    thinking_message = await call.message.answer(LocalizationService.BotTexts.CreatingPlanMessage(data.get('language','ru')))
+    thinking_message = await call.message.answer(LocalizationService.BotTexts.CreatingPlanMessage(data.get('language', 'ru')))
     await bot.send_chat_action(call.message.chat.id, action="typing")
 
     data = await state.get_data()
@@ -128,12 +143,12 @@ async def auto_plan(call: types.CallbackQuery, state: FSMContext,):
 
     parsed_plan = BotService.parse_work_plan(plan)
     await call.message.answer(
-       LocalizationService.BotTexts.GetPlanScheme(data.get('language','ru'))
+        LocalizationService.BotTexts.GetPlanScheme(data.get('language', 'ru'))
     )
     parsed_plan = BotService.parse_work_plan(plan)
     await call.message.answer(
         parsed_plan,
-        reply_markup=Keyboard.ActionsWithDonePlan(data.get('language','ru')),
+        reply_markup=Keyboard.ActionsWithDonePlan(data.get('language', 'ru')),
         parse_mode=ParseMode.HTML
     )
     await state.set_state(FSMEssayhelper.choosing_action_with_plan)
@@ -150,7 +165,8 @@ async def handleRequestAbstract(call: types.CallbackQuery, state: FSMContext):
 
     if not essay_service.is_retries_allowed():
         await call.answer(
-            LocalizationService.BotTexts.RegenerationLimitExceded(data.get('language','ru')),
+            LocalizationService.BotTexts.RegenerationLimitExceded(
+                data.get('language', 'ru')),
             show_alert=True
         )
         return
@@ -160,12 +176,12 @@ async def handleRequestAbstract(call: types.CallbackQuery, state: FSMContext):
 
     plan = await essay_service.get_plan_response()
     await call.message.answer(
-       LocalizationService.BotTexts.GetPlanScheme(data.get('language','ru'))
+        LocalizationService.BotTexts.GetPlanScheme(data.get('language', 'ru'))
     )
     parsed_plan = BotService.parse_work_plan(plan)
     await call.message.answer(
         parsed_plan,
-        reply_markup=Keyboard.ActionsWithDonePlan(data.get('language','ru')),
+        reply_markup=Keyboard.ActionsWithDonePlan(data.get('language', 'ru')),
         parse_mode=ParseMode.HTML
     )
     await state.set_state(FSMEssayhelper.choosing_action_with_plan)
@@ -178,10 +194,11 @@ async def handleRequestAbstract(call: types.CallbackQuery, state: FSMContext):
 async def handleRequestAbstract(call: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     confirm_plan_text = LocalizationService.BotTexts.GetConfirmPlanText(
-        data.get('language','ru'))
+        data.get('language', 'ru'))
     await call.message.answer(
         confirm_plan_text,
-        reply_markup=Keyboard.GetConfirmationActions(data.get('language','ru'))
+        reply_markup=Keyboard.GetConfirmationActions(
+            data.get('language', 'ru'))
     )
     await state.set_state(FSMEssayhelper.proceed_action)
 
@@ -192,32 +209,13 @@ async def handleRequestAbstract(call: types.CallbackQuery, state: FSMContext):
 )
 async def handleRequestAbstract(call: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
-    typing_text = LocalizationService.BotTexts.GenerationTextByWorkType(data.get('language','ru'),
-        'essay', 'start')
-    demand_minutes, demand_seconds = 3, 2
-    finish_text = LocalizationService.BotTexts.GenerationTextByWorkType(data.get('language','ru'),
-        'essay', 'finish')
-    countdown_message = await call.answer(typing_text.format(
-        minutes=demand_minutes,
-        seconds=demand_seconds,
-        url=GROUP_LINK_URL
-    ),parse_mode=ParseMode.HTML)
-    countdown_task = asyncio.create_task(
-        BotService.countdown(call=None,
-                             countdown_message=countdown_message,
-                             duration=demand_minutes*60+demand_seconds,
-                             interval=3,
-                             new_text=typing_text,
-                             finish_text=finish_text)
-    )
+    
     essay_service: EssayGPTService = data.get('essay_service')
-    result = await essay_service.build_essay_work()
-    countdown_task.cancel()
-    try:
-        await countdown_message.delete()
-    except Exception as e:
-        pass
-
+    
+    result = await BotService.run_process_with_countdown(
+        message=call.message,
+        task=essay_service.build_essay_work
+    )
     doc_creator = GOSTWordEssayDocument(result)
     doc_creator.create_document()
     end_path = PATH_TO_TEMP_FILES.joinpath(str(call.message.from_user.id)).joinpath(
@@ -239,8 +237,8 @@ async def handleRequestAbstract(call: types.CallbackQuery, state: FSMContext):
 async def cancel_creating(call: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     cancellation_text = LocalizationService.BotTexts.GetCancellationText(
-        data.get('language','ru'))
+        data.get('language', 'ru'))
     await call.message.answer(
         cancellation_text,
-        reply_markup=Keyboard.Get_Back_Button(data.get('language','ru'))
+        reply_markup=Keyboard.Get_Back_Button(data.get('language', 'ru'))
     )

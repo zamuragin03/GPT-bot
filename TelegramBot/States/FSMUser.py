@@ -71,3 +71,6 @@ class FSMPPTXHelper(StatesGroup):
     change_template = State()
     change_fetch_images = State()
     change_tone = State()
+
+class FSMAntiplagitHelper(StatesGroup):
+    choosing_action = State()

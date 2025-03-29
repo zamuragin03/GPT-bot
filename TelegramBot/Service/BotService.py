@@ -1,5 +1,7 @@
+import io
 import itertools
 import time
+from typing import Union
 from PIL import Image, ImageEnhance, ImageOps
 import re
 from datetime import datetime, timedelta
@@ -15,7 +17,7 @@ import numpy as np
 from docx.shared import Pt
 import matplotlib.pyplot as plt
 from aiogram.types import FSInputFile
-from Config import PATH_TO_TEMP_FILES, SUBSCRIPTION_LIMITATIONS, GROUP_LINK_URL, DAILY_LIMITATIONS, PATH_TO_DOWNLOADED_FILES, PATH_TO_TEMP_WATERMARK
+from Config import PATH_TO_TEMP_FILES, SUBSCRIPTION_LIMITATIONS, GROUP_LINK_URL, DAILY_LIMITATIONS, PATH_TO_DOWNLOADED_FILES, PATH_TO_TEMP_WATERMARK, client
 from DataModels.ChartCreatorDataModel import ChartResponse
 import matplotlib
 from aiogram import types, Bot
@@ -32,9 +34,14 @@ class BotService:
     progress_cycle = itertools.cycle(progress_indicators)
 
     @staticmethod
-    def encode_image(image_path):
-        with open(image_path, "rb") as image_file:
-            return base64.b64encode(image_file.read()).decode('utf-8')
+    async def encode_image(message:types.Message):
+        photo = message.photo[-1]
+        photo_folder = PATH_TO_DOWNLOADED_FILES.joinpath(str(message.from_user.id))
+        photo_folder.mkdir(parents=True, exist_ok=True)
+        photo_path = photo_folder.joinpath(f'{photo.file_unique_id}.jpg')
+        await message.bot.download(file=message.photo[-1].file_id, destination=photo_path)
+        async with aiofiles.open(photo_path, "rb") as image_file:
+            return base64.b64encode(await image_file.read()).decode('utf-8')
 
     @staticmethod
     def invert_image(base_image_path, output_path):
@@ -161,7 +168,7 @@ class BotService:
         return FSInputFile(path=end_path, filename="chart.jpg")
 
     @staticmethod
-    async def check_user_subscription(event: types.Message):
+    async def check_user_subscription(event: Union[types.Message, types.CallbackQuery]):
         from Keyboards.keyboards import Keyboard
         try:
             member = await event.bot.get_chat_member('@student_helper_news', event.from_user.id)
@@ -236,7 +243,8 @@ class BotService:
             limitation_object = TelegramUserSubscriptionService.GetUserDailyLimitations(
                 user.id)
             limits = DAILY_LIMITATIONS
-
+        
+        
         limitations_remaining = limitation_object.get('limitations')
 
         localized_text = LocalizationService.BotTexts.GetMyProfileText(
@@ -249,36 +257,28 @@ class BotService:
             days=remained_time['days'],
             hours=remained_time['hours'],
             minutes=remained_time['minutes'],
-            default_mode=format_limit(limits["default_mode"]),
             default_mode_remain=limits["default_mode"] -
             max(0, limitations_remaining["default_mode"]),
-            code_helper=format_limit(limits["code_helper"]),
             code_helper_remain=limits["code_helper"] -
             max(0, limitations_remaining["code_helper"]),
-            abstract_writer=format_limit(limits["abstract_writer"]),
             abstract_writer_remain=limits["abstract_writer"] -
             max(0, limitations_remaining["abstract_writer"]),
-            course_work_helper=format_limit(limits["course_work_helper"]),
             course_work_helper_remain=limits["course_work_helper"] -
             max(0, limitations_remaining["course_work_helper"]),
-            final_paper_helper=format_limit(limits["final_paper_helper"]),
             final_paper_helper_remain=limits["final_paper_helper"] -
             max(0, limitations_remaining["final_paper_helper"]),
-            essay_helper=format_limit(limits["essay_helper"]),
             essay_helper_remain=limits["essay_helper"] -
             max(0, limitations_remaining["essay_helper"]),
-            photo_issue_helper=format_limit(limits["photo_issue_helper"]),
             photo_issue_helper_remain=limits["photo_issue_helper"] -
             max(0, limitations_remaining["photo_issue_helper"]),
-            chart_creator_helper=format_limit(limits["chart_creator_helper"]),
             chart_creator_helper_remain=limits["chart_creator_helper"] - max(
                 0, limitations_remaining["chart_creator_helper"]),
-            power_point_helper=format_limit(limits["power_point_helper"]),
             power_point_helper_remain=limits["power_point_helper"] -
             max(0, limitations_remaining["power_point_helper"]),
-            rewriting_helper=format_limit(limits["rewriting_helper"]),
             rewriting_helper_remain=limits["rewriting_helper"] -
-            max(0, limitations_remaining["rewriting_helper"])
+            max(0, limitations_remaining["rewriting_helper"]),
+            anti_plagiarism_system_remain=limits['anti_plagiarism_system'] -
+            max(0, limitations_remaining['anti_plagiarism_system'])
         )
 
     @staticmethod
@@ -309,7 +309,7 @@ class BotService:
         photo_folder = PATH_TO_DOWNLOADED_FILES.joinpath(
             str(message.from_user.id))
         photo_folder.mkdir(parents=True, exist_ok=True)
-        file_path = photo_folder.joinpath(f'{file.file_unique_id}.jpg')
+        file_path = photo_folder.joinpath(f'{file.file_unique_id}.txt')
         await bot.download(file=document.file_id, destination=file_path)
         content = ""
         async with aiofiles.open(file_path, 'r') as f:
@@ -431,6 +431,7 @@ class BotService:
         empty_length = total - filled_length
         return filled_char * filled_length + empty_char * empty_length + f" {int(progress / total * 100)}%"
 
+    @staticmethod
     async def send_long_message(target, text: str, parse_mode: str = None, disable_web_page_preview: bool = False, reply_markup=None):
         """
         Отправляет длинное сообщение в несколько батчей, поддерживая как Message, так и CallbackQuery.
@@ -442,6 +443,20 @@ class BotService:
         """
         max_length = 4096  # Максимальная длина сообщения в Telegram
 
+        # Функция для поиска незакрытых тегов
+        def fix_unclosed_tags(batch, remaining_text):
+            open_tags = re.findall(r'<([a-zA-Z]+)(?: [^>]*)?(?<!/)>', batch)
+            close_tags = re.findall(r'</([a-zA-Z]+)>', batch)
+
+            # Определяем незакрытые теги
+            for tag in reversed(open_tags):
+                if close_tags.count(tag) < open_tags.count(tag):
+                    batch += f"</{tag}>"
+                    remaining_text = f"<{tag}>" + remaining_text
+                    open_tags.remove(tag)
+
+            return batch, remaining_text
+
         # Разбиваем текст на батчи
         text_batches = [text[i:i + max_length]
                         for i in range(0, len(text), max_length)]
@@ -452,15 +467,20 @@ class BotService:
                 target, types.Message) else target.message.reply
         )
 
+        remaining_text = ""
         # Отправляем каждую часть сообщения
         for batch in text_batches:
+            batch = remaining_text + batch
+            batch, remaining_text = fix_unclosed_tags(batch, remaining_text)
             await send_method(
                 text=batch,
                 parse_mode=parse_mode,
-                disable_web_page_preview=disable_web_page_preview, reply_markup=reply_markup
+                disable_web_page_preview=disable_web_page_preview,
+                reply_markup=reply_markup,
             )
 
-    def formatReferals(referal_obj: list, period:str):
+    @staticmethod
+    def formatReferals(referal_obj: list, period: str):
         translation = {
             'last_month': 'в прошлом месяце',
             'this_month': 'в этом месяце',
@@ -472,6 +492,87 @@ class BotService:
             external_id = referral.get('referal__external_id', 'Не указан')
             invite_count = referral.get('invite_count', 0)
             message += f"{i}. Имя: {username}, ID: {external_id}, Кол-во приглашенных: {invite_count}\n"
-        if len(referal_obj)==0:
-            message+='Данных нет'
+        if len(referal_obj) == 0:
+            message += 'Данных нет'
         return message
+
+    @staticmethod
+    async def getFileContent(bot: Bot, message: types.Message):
+        document = message.document
+        file = await bot.get_file(document.file_id)
+
+        # Получаем расширение файла из имени
+        file_extension = document.file_name.split(
+            '.')[-1] if '.' in document.file_name else 'txt'
+
+        # Создаем папку для пользователя, если её нет
+        file_folder = PATH_TO_DOWNLOADED_FILES.joinpath(
+            str(message.from_user.id))
+        file_folder.mkdir(parents=True, exist_ok=True)
+
+        # Формируем полный путь с правильным расширением
+        file_path = file_folder.joinpath(
+            f'{file.file_unique_id}.{file_extension}')
+        await bot.download(file=document.file_id, destination=file_path)
+
+        file_content = ''
+        async with aiofiles.open(file_path, 'rb') as f:
+            file_content = await f.read()
+        return file_content
+
+    @staticmethod
+    async def run_process_with_countdown(message:types.Message, task, *args, **kwargs):
+        """
+        Метод для отображения таймера, смены фраз и выполнения задачи с удалением сообщения по завершению.
+        
+        :param message: Сообщение, куда отправлять прогресс
+        :param task: Асинхронная задача, которую нужно выполнить
+        :param total_time: Общее время выполнения в секундах
+        :param args: Аргументы для задачи
+        :param kwargs: Именованные аргументы для задачи
+        """
+        
+        phrases = ["Анализирую запрос...", "Ищу информацию...", "Генерирую текст...", ]
+        phrase_cycle = itertools.cycle(phrases)
+        start_time = time.time()
+
+        # Отправляем начальное сообщение
+
+        current_phrase = next(phrase_cycle)  # Первая фраза
+
+        # Отправляем начальное сообщение
+        progress_message = await message.answer(f"<code>[00:00] {current_phrase}</code>")
+
+        current_time = 0  # Отслеживание времени
+        phrase_update_time = 0  # Для контроля смены фразы
+
+        previous_message_content = f"<code>[00:00] {current_phrase}</code>"
+        
+        task_coro = task(*args, **kwargs)
+        task_result = asyncio.create_task(task_coro)
+
+        while not task_result.done():
+            # Обновляем таймер каждую секунду
+            current_time = int(time.time() - start_time)
+            minutes, seconds = divmod(current_time, 60)
+
+            # Обновляем фразу каждые две секунды
+            if current_time - phrase_update_time >= 2:
+                current_phrase = next(phrase_cycle)
+                phrase_update_time = current_time
+
+            # Генерируем новое сообщение
+            new_message_content = f"<code>[{minutes:02}:{seconds:02}] {current_phrase}</code>"
+
+            # Проверяем, изменилось ли содержимое
+            if new_message_content != previous_message_content:
+                await progress_message.edit_text(new_message_content)
+                previous_message_content = new_message_content
+
+            # Ждем 1 секунду перед следующей итерацией
+            await asyncio.sleep(1)
+            
+        result = await task_result
+
+        await progress_message.delete()
+        return result

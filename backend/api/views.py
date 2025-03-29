@@ -203,7 +203,7 @@ class ActivatePromocodeView(APIView):
             # Используем общую функцию для создания или продления подписки
             response_data = create_or_extend_subscription(
                 user, promocode.sub_type)
-
+    
             # Деактивируем промокод
             promocode.is_active = False
             promocode.save()

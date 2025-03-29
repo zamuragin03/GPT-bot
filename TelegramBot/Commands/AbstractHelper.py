@@ -1,10 +1,10 @@
 
 import asyncio
-from Config import dp, bot, gpt_router, PATH_TO_TEMP_FILES, GROUP_LINK_URL
+from Config import dp, bot, gpt_router,router, PATH_TO_TEMP_FILES, GROUP_LINK_URL
 from Keyboards.keyboards import Keyboard
 from Keyboards import Callbacks
 from aiogram import F
-from States import FSMAdmin, FSMAbstracthelper
+from States import  FSMAbstracthelper, FSMUser
 from aiogram.fsm.context import FSMContext
 from aiogram.filters import *
 from aiogram.types import FSInputFile
@@ -12,6 +12,24 @@ from aiogram.enums.parse_mode import ParseMode
 from aiogram.enums.content_type import ContentType
 from aiogram import types
 from Service import LocalizationService, BotService, AbstractWorkGPTService, GOSTWordDocument, CustomFilters
+
+
+@router.callback_query(
+    FSMUser.select_mode,
+    F.data == 'abstract_writer',
+    CustomFilters.gptTypeFilter('abstract_writer')
+)
+async def chart_creator_helper(call: types.CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    abstract_helper_text = LocalizationService.BotTexts.GetAbstractWelcomeHelperText(
+        data.get('language', 'ru'))
+    await call.message.edit_text(
+        text=abstract_helper_text,
+        reply_markup=Keyboard.GenerateWorkButton(
+            call.data, data.get('language', 'ru'))
+    )
+    await state.set_state(FSMAbstracthelper.choosing_action)
+
 
 
 @gpt_router.callback_query(
@@ -107,10 +125,10 @@ async def retrieving_manual_plan(message: types.Message, state: FSMContext,):
     FSMAbstracthelper.choosing_plan_generation
 )
 async def auto_plan(call: types.CallbackQuery, state: FSMContext,):
+    data = await state.get_data()
     thinking_message = await call.message.answer(LocalizationService.BotTexts.CreatingPlanMessage(data.get('language','ru')))
     await bot.send_chat_action(call.message.chat.id, action="typing")
 
-    data = await state.get_data()
     abstract_service = data.get('abstract_service')
 
     abstract_service = AbstractWorkGPTService(
@@ -134,7 +152,7 @@ async def auto_plan(call: types.CallbackQuery, state: FSMContext,):
 
 
 @gpt_router.callback_query(
-    F.data == 'genereate_new_plan',
+    F.data == 'regenerate',
     FSMAbstracthelper.choosing_action_with_plan
 )
 async def handleRequestAbstract(call: types.CallbackQuery, state: FSMContext):
@@ -185,13 +203,10 @@ async def handleRequestAbstract(call: types.CallbackQuery, state: FSMContext):
 async def handleRequestAbstract(call: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     abstract_service: AbstractWorkGPTService = data.get('abstract_service')
-    result = await BotService.run_with_progress(
+    result = await BotService.run_process_with_countdown(
         message=call.message,
-        total_time=15,
         task=abstract_service.build_abstract_work
     )
-
-
     doc_creator = GOSTWordDocument(result)
     doc_creator.create_document()
     end_path = PATH_TO_TEMP_FILES.joinpath(str(call.from_user.id)).joinpath(

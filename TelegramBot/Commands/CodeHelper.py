@@ -1,8 +1,8 @@
 import asyncio
-from Config import dp, bot, gpt_router, GROUP_LINK_URL
+from Config import dp, bot, gpt_router, router, GROUP_LINK_URL
 from Keyboards import Keyboard, KeyboardService
 from aiogram import F
-from States import FSMCodeHelper
+from States import FSMCodeHelper, FSMUser
 from aiogram.fsm.context import FSMContext
 from aiogram.filters import *
 from aiogram.types import FSInputFile
@@ -11,32 +11,97 @@ from Service import LocalizationService, CodeHelperGPTService, CustomFilters, Bo
 from aiogram.enums.parse_mode import ParseMode
 from aiogram import types
 
+# handle message with code helper
+
+
+@router.callback_query(
+    FSMUser.select_mode,
+    F.data == 'code_helper',
+    CustomFilters.gptTypeFilter('code_helper')
+)
+async def select_language(call: types.CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    # Проверка наличия объекта code_helper в состоянии
+    code_helper = data.get('code_helper')
+
+    if not code_helper:
+        code_helper = CodeHelperGPTService(
+            external_id=call.from_user.id, language=data.get('language', 'ru'))
+        await state.update_data(code_helper=code_helper)
+    await call.message.edit_text(
+        text=LocalizationService.BotTexts.GetCodeHelperText(
+            data.get('language', 'ru')),
+        reply_markup=Keyboard.Code_helper_buttons(data.get('language', 'ru'))
+
+    )
+    await state.set_state(FSMCodeHelper.typing_message)
 
 
 # handle message with code helper
 @gpt_router.message(
     FSMCodeHelper.typing_message,
-    CustomFilters.gptTypeFilter('code_helper')
-    
+    CustomFilters.gptTypeFilter('code_helper'),
+    F.text,
 )
 async def typing_message(message: types.Message, state: FSMContext):
     data = await state.get_data()
     code_helper: CodeHelperGPTService = data.get('code_helper')
+
     if code_helper.check_if_context_limit_reached():
         await message.reply(
-            text=LocalizationService.BotTexts.GetLimitedContextText(data.get('language', 'ru')),
-            reply_markup=Keyboard.Code_helper_buttons(data.get('language','ru')),
+            text=LocalizationService.BotTexts.GetLimitedContextText(
+                data.get('language', 'ru')),
+            reply_markup=Keyboard.Code_helper_buttons(
+                data.get('language', 'ru')),
         )
         return
+
     code_helper.add_message(message.text)
-    result = await BotService.run_with_progress(
+    result = await BotService.run_process_with_countdown(
         message=message,
-        total_time=15,
-        task=code_helper.generate_response,
+        task=code_helper.generate_response  # Задача
     )
-    await BotService.send_long_message(message,
+
+    await BotService.send_long_message(
+        message,
         result,
-        reply_markup=Keyboard.Code_helper_buttons(data.get('language','ru')),
+        disable_web_page_preview=True,
+        parse_mode=ParseMode.HTML,
+    )
+
+
+@gpt_router.message(
+    FSMCodeHelper.typing_message,
+    CustomFilters.gptTypeFilter('code_helper'),
+    F.document
+)
+async def typing_file(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    code_helper: CodeHelperGPTService = data.get('code_helper')
+
+    # Проверка на превышение лимита контекста
+    if code_helper.check_if_context_limit_reached():
+        await message.reply(
+            text=LocalizationService.BotTexts.GetLimitedContextText(
+                data.get('language', 'ru')),
+            reply_markup=Keyboard.Code_helper_buttons(
+                data.get('language', 'ru')),
+        )
+        return
+
+    code_text = await BotService.getFileContent(bot, message)
+    code_helper.add_file_message(
+        code_text, message.caption if message.caption else None)
+    # Выполняем обработкуо
+    result = await BotService.run_process_with_countdown(
+        message=message,
+        task=code_helper.generate_response  # Задача
+    )
+
+    await BotService.send_long_message(
+        message,
+        result,
+        disable_web_page_preview=True,
         parse_mode=ParseMode.HTML,
     )
 
@@ -50,8 +115,9 @@ async def clear_context(call: types.CallbackQuery, state: FSMContext):
     code_helper: CodeHelperGPTService = data.get('code_helper')
     code_helper.set_auto_save(True if call.data == 'auto_save_on' else False)
     await call.answer(
-        LocalizationService.BotTexts.GetCodeHelperAutoSaveText(call.data, data.get('language','ru')),
-        reply_markup=Keyboard.Clear_Context_kb(data.get('language','ru')),
+        LocalizationService.BotTexts.GetCodeHelperAutoSaveText(
+            call.data, data.get('language', 'ru')),
+        reply_markup=Keyboard.Clear_Context_kb(data.get('language', 'ru')),
         parse_mode=ParseMode.HTML,
         show_alert=True
     )
@@ -66,8 +132,9 @@ async def clear_context(call: types.CallbackQuery, state: FSMContext):
     code_helper: CodeHelperGPTService = data.get('code_helper')
     code_helper.clear_context()
     await call.answer(
-        LocalizationService.BotTexts.GetClearContextText(data.get('language','ru')),
-        reply_markup=Keyboard.Clear_Context_kb(data.get('language','ru')),
+        LocalizationService.BotTexts.GetClearContextText(
+            data.get('language', 'ru')),
+        reply_markup=Keyboard.Clear_Context_kb(data.get('language', 'ru')),
         parse_mode=ParseMode.HTML,
         show_alert=True
     )
@@ -97,7 +164,7 @@ async def change_reasoning_effort(call: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     code_helper: CodeHelperGPTService = data.get(
         'code_helper')
-    code_helper.change_reasoning_effort(call.data)  
+    code_helper.change_reasoning_effort(call.data)
     await call.answer(
         text=LocalizationService.BotTexts.GetCancellationText(
             user.get('language')),
@@ -106,4 +173,4 @@ async def change_reasoning_effort(call: types.CallbackQuery, state: FSMContext):
         show_alert=True
     )
     await call.message.delete()
-
+    await state.set_state(FSMCodeHelper.typing_message)

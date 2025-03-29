@@ -1,9 +1,9 @@
 
 import asyncio
-from Config import dp, bot, gpt_router, GROUP_LINK_URL
+from Config import dp, bot, router,gpt_router, GROUP_LINK_URL
 from Keyboards.keyboards import Keyboard
 from aiogram import F
-from States import FSMAdmin, FSMChartCreator
+from States import FSMAdmin, FSMChartCreator, FSMUser
 from aiogram.fsm.context import FSMContext
 from aiogram.filters import *
 from aiogram.types import FSInputFile
@@ -11,6 +11,24 @@ from aiogram.enums.parse_mode import ParseMode
 from aiogram.enums.content_type import ContentType
 from aiogram import types
 from Service import CustomFilters, BotService, ChartCreatorGPTService, LocalizationService
+
+
+@router.callback_query(
+    FSMUser.select_mode,
+    F.data == 'chart_creator_helper',
+    CustomFilters.gptTypeFilter('chart_creator_helper')
+)
+async def chart_creator_helper(call: types.CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    chart_creator_text = LocalizationService.BotTexts.GetChartCreatorInitText(
+        data.get('language', 'ru'))
+    await call.message.edit_text(
+        text=chart_creator_text,
+        reply_markup=Keyboard.ActionsWithPlotCreator(
+            data.get('language', 'ru'))
+    )
+    await state.set_state(FSMChartCreator.choosing_action)
+
 
 
 @gpt_router.callback_query(
@@ -33,34 +51,20 @@ async def handleRequest(call: types.CallbackQuery, state: FSMContext):
 async def handleRequest(message: types.Message, state: FSMContext):
     data = await state.get_data()
     chart_creator = ChartCreatorGPTService(message.from_user.id)
-    typing_text = LocalizationService.BotTexts.GenerationTextByWorkType(
-        data.get('language','ru'), 'chart', 'start')
-    demand_minutes, demand_seconds = 0, 15
-    finish_text = LocalizationService.BotTexts.GenerationTextByWorkType(
-        data.get('language','ru'), 'chart', 'finish')
-    countdown_message = await message.answer(typing_text.format(
-        minutes=demand_minutes,
-        seconds=demand_seconds,
-        url=GROUP_LINK_URL,
-    ), parse_mode=ParseMode.HTML)
-    countdown_task = asyncio.create_task(
-        BotService.countdown(call=None,
-                             countdown_message=countdown_message,
-                             duration=demand_minutes*60+demand_seconds,
-                             interval=1,
-                             new_text=typing_text,
-                             finish_text=finish_text)
+    chart_creator.add_message(message.text)
+    
+    result = await BotService.run_process_with_countdown(
+        message=message,
+        task=chart_creator.GetChartCode   # Задача
     )
-    response_from_chat = await chart_creator.GetChartCode(message.text)
-
-    if response_from_chat.leave:
-        await message.answer('error')
+    if result.leave:
+        await message.answer('incorrect query')
     else:
         try:
             done_chart_text = LocalizationService.BotTexts.GetChartCreatorDoneGraph(
                 data.get('language','ru'))
             image_to_send = BotService.create_image_by_user_requset(
-                response_from_chat, message.from_user.id)
+                result, message.from_user.id)
             await message.answer_photo(
                 caption=done_chart_text,
                 photo=image_to_send,
@@ -68,9 +72,9 @@ async def handleRequest(message: types.Message, state: FSMContext):
         except Exception as e:
             print(e)
             await message.answer('Too complicated for me')
-
-    countdown_task.cancel()
-    try:
-        await countdown_message.delete()
-    except Exception as e:
-        pass
+        finally:
+            await message.answer(
+                text='Выберите действие',
+                reply_markup=Keyboard.Get_Menu(data.get('language', 'ru'))
+            )
+            await state.set_state(FSMUser.choosing_action)

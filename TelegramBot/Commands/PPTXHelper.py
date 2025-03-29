@@ -1,8 +1,8 @@
 
-from Config import dp, bot, gpt_router, PATH_TO_TEMP_FILES
+from Config import dp, bot, gpt_router,router, PATH_TO_TEMP_FILES
 from Keyboards.keyboards import Keyboard, Callbacks
 from aiogram import F
-from States import FSMPPTXHelper
+from States import FSMPPTXHelper, FSMUser
 from aiogram.fsm.context import FSMContext
 from aiogram.filters import *
 from aiogram.types import FSInputFile
@@ -10,6 +10,26 @@ from aiogram.enums.parse_mode import ParseMode
 from aiogram.enums.content_type import ContentType
 from aiogram import types
 from Service import LocalizationService, BotService, CustomFilters
+
+
+@router.callback_query(
+    FSMUser.select_mode,
+    F.data == 'power_point_helper',
+    CustomFilters.gptTypeFilter('power_point_helper')
+)
+async def select_language(call: types.CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    pptx_text = LocalizationService.BotTexts.GetPPTXWelcomeText(
+        data.get('language', 'ru'))
+    await call.message.edit_text(
+        text=pptx_text,
+        reply_markup=Keyboard.GetPresentationButtons(
+            data.get('language', 'ru'))
+
+    )
+    await state.set_state(FSMPPTXHelper.choosing_action)
+
+# handle message with rewriting helper
 
 
 @gpt_router.callback_query(

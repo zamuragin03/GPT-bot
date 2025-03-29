@@ -179,22 +179,7 @@
             }
         }
     ],
-    "actions_with_abstract_work_confirm_plan": [
-        {
-            "callback_data": "confirm_plan",
-            "localization": {
-                "ru": "Подтвердить ✅",
-                "en": "Confirm ✅"
-            }
-        },
-        {
-            "callback_data": "genereate_new_plan",
-            "localization": {
-                "ru": "Отменить генерацию ❌",
-                "en": "Cancel generation ❌"
-            }
-        }
-    ],
+
     "actions_with_plan": [
         {
             "callback_data": "auto_plan",
@@ -220,7 +205,7 @@
             }
         },
         {
-            "callback_data": "confirm",
+            "callback_data": "confirm_plan",
             "localization": {
                 "ru": "Подтвердить ✅",
                 "en": "Confirm ✅"
@@ -299,13 +284,6 @@
             }
         },
         {
-            "callback_data": "change_reasoning_effort",
-            "localization": {
-                "ru": "Изменить усилие рассуждения",
-                "en": "Change the reasoning effort"
-            }
-        },
-        {
             "callback_data": "clear_context",
             "localization": {
                 "ru": "Удалить сохраненое 🟥",
@@ -313,7 +291,7 @@
             }
         },
         {
-            "callback_data": "back_to_menu",
+            "callback_data": "back_to_menu_from_default_mode",
             "localization": {
                 "ru": "⬅️Назад⬅️",
                 "en": "⬅️Back⬅️"

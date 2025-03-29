@@ -12,7 +12,9 @@ from .const import (PATH_TO_DOWNLOADED_FILES,
                     GROUP_LINK_URL,
                     AI_MODELS,
                     REASONING_EFFORT, 
-                    PATH_TO_TEMP_WATERMARK
+                    PATH_TO_TEMP_WATERMARK,
+                    ANTI_PLAGIAT_API,
+                    X_USER_ID
                     )
 from .initialize import (bot,
                          dp,

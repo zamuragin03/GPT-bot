@@ -3,17 +3,19 @@ from Config import (client,
                     DEFAULT_MODE_SYSTEM_PROMPT,
                     AI_MODELS, REASONING_EFFORT
                     )
+from .LocalizationService import LocalizationService
 from .UserActionService import UserActionService
 
 
 class DefaultModeGPTService:
-    def __init__(self, external_id):
+    def __init__(self, external_id, language):
         self.total_tokens_used = 0
         self.user_external_id = external_id
-        self.model = AI_MODELS.O_3_MINI
+        self.model = AI_MODELS.GPT_4_O
         self.reasoning_effort = REASONING_EFFORT.MEDIUM
         self.auto_save = True
         self.action_type_name = 'default_mode'
+        self.language = language
         self.messages = [
             {
                 "role": "system",
@@ -92,11 +94,12 @@ class DefaultModeGPTService:
         self.auto_save = flag
 
     def check_if_context_limit_reached(self,):
-        if self.total_tokens_used>45000:
+        if self.total_tokens_used > 45000:
             return True
         return False
+
     def add_action(self, response: Completion):
-        self.total_tokens_used+=response.usage.total_tokens
+        self.total_tokens_used += response.usage.total_tokens
         last_message = list(filter(lambda x: x.get(
             'role') == 'user', self.messages))[-1].get('content')[0].get('text')
         UserActionService.CreateUserAction(
@@ -164,6 +167,7 @@ class DefaultModeGPTService:
         if not self.auto_save:
             self.clear_context()
         self.add_action(response)
-        result_text = 'Здравствуйте! Я <a href="https://t.me/student_helpergpt_bot">StudentHelper</a>, персональный помощник любом вопросе👨‍💻\n\n'
+        result_text = LocalizationService.BotTexts.GetPrefixByName(
+            self.action_type_name, self.language)
         result_text += self.escape_html(response.choices[0].message.content)
         return result_text

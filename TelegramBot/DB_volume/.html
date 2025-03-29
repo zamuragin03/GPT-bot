@@ -1,0 +1,122 @@
+Здравствуйте! Я <a href="https://t.me/student_helpergpt_bot">StudentHelper</a>,  персональный помощник в написании и редактировании кода 👨‍💻
+
+<pre><code class="language-python">import asyncio
+from Config import dp, bot, admin_router
+from Keyboards.keyboards import Keyboard
+from aiogram import F, types
+from States import FSMAdmin
+from aiogram.fsm.context import FSMContext
+from aiogram.filters import Command
+from Service import TelegramUserService, AdminService, BotService
+from aiogram.enums.parse_mode import ParseMode
+
+@admin_router.message(Command('admin_menu'))
+async def access_admin_menu(message: types.Message, state: FSMContext):
+    await message.answer('Выберите действие админа', reply_markup=Keyboard.Get_Admin_Menu())
+    await state.set_state(FSMAdmin.choosing_action)
+
+@admin_router.message(
+    FSMAdmin.choosing_action,
+    F.text == 'Статистика',
+)
+async def send_statistics(message: types.Message, state: FSMContext):
+    statistic_text = AdminService.GetStatistic()
+    await message.answer(statistic_text)
+
+@admin_router.message(
+    FSMAdmin.choosing_action,
+    F.text == 'Статистика рефералов',
+)
+async def send_referral_menu(message: types.Message, state: FSMContext):
+    await message.answer('Выберите период', reply_markup=Keyboard.GetPeriodTypeKb())
+
+@admin_router.callback_query(
+    F.data.in_({'last_month', 'this_month', 'all_time'})
+)
+async def get_stat(call: types.CallbackQuery, state: FSMContext):
+    result = AdminService.GetReferalStat(call.data)
+    format_text = BotService.formatReferals(result, call.data)
+    await call.message.edit_text(
+        format_text,
+        reply_markup=Keyboard.GetPeriodTypeKb()
+    )
+
+@admin_router.message(
+    FSMAdmin.choosing_action,
+    F.text == 'Массовая рассылка',
+)
+async def mass_message(message: types.Message, state: FSMContext):
+    await message.answer('Отправьте текст (с фото или без) для рассылки')
+    await state.set_state(FSMAdmin.type_mass_message)
+
+@admin_router.message(F.photo, FSMAdmin.type_mass_message)
+async def process_mass_message_with_photo(message: types.Message, state: FSMContext):
+    caption = message.caption if message.caption else ''
+    photo = message.photo[-1].file_id
+
+    # Сохраняем тип сообщения и данные (фото и подпись) в FSM
+    await state.update_data(mass_message_type='photo', mass_message_caption=caption, mass_message_photo=photo)
+    await message.answer_photo(
+        photo=photo,
+        caption=f"Ваше сообщение:\n\n{caption}",
+        reply_markup=Keyboard.GetMassMessageConfirmationKeyboard()
+    )
+
+@admin_router.message(F.text, FSMAdmin.type_mass_message)
+async def process_mass_message_with_text(message: types.Message, state: FSMContext):
+    await state.update_data(mass_message_type='text', mass_message_caption=message.text)
+    await message.answer(
+        text=f"Ваше сообщение:\n\n{message.text}",
+        reply_markup=Keyboard.GetMassMessageConfirmationKeyboard()
+    )
+
+async def send_mass_message_to_user(user: dict, message_type: str, text: str, photo: str = None):
+    try:
+        if message_type == 'text':
+            await bot.send_message(
+                chat_id=user.get('external_id'),
+                text=text,
+                parse_mode=ParseMode.HTML
+            )
+        elif message_type == 'photo':
+            await bot.send_photo(
+                chat_id=user.get('external_id'),
+                photo=photo,
+                caption=text,
+                parse_mode=ParseMode.HTML
+            )
+    except Exception as e:
+        print(f"Failed to send message to {user.get('username')}: {e}")
+
+@admin_router.callback_query(F.data == "confirm_mass_message")
+async def confirm_mass_message(callback: types.CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    users = TelegramUserService.GetAllTelegramUsers()
+    message_type = data['mass_message_type']
+    text = data['mass_message_caption']
+    tasks = []
+    if message_type == 'text':
+        for user in users:
+            tasks.append(send_mass_message_to_user(user, message_type, text))
+    elif message_type == 'photo':
+        photo = data['mass_message_photo']
+        for user in users:
+            tasks.append(send_mass_message_to_user(user, message_type, text, photo=photo))
+    await asyncio.gather(*tasks)
+    await callback.message.answer('Сообщение отправлено всем пользователям!')
+    await state.clear()
+
+@admin_router.callback_query(F.data == "decline_mass_message")
+async def decline_mass_message(callback: types.CallbackQuery, state: FSMContext):
+    await callback.message.answer('Рассылка была отменена.')
+    await state.clear()
+</code></pre>
+  
+<b>Пояснения по оптимизациям:</b>
+  
+1. <i>Уникальные имена функций:</i> Функции для обработки статистики были переименованы для избежания конфликтов.
+2. <i>Вынесена логика массовой рассылки в отдельную функцию</i> <code>send_mass_message_to_user</code> для устранения дублирования кода.
+3. <i>Использование asyncio.gather:</i> Массовая рассылка теперь происходит параллельно, что повышает производительность.
+4. <i>Поддержка единого стиля кода:</i> Общий подход к форматированию и обработке состояний FSM.
+
+Эти улучшения делают код более читаемым, структурированным и оптимизированным для асинхронной обработки сообщений.

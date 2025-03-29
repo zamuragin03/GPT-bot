@@ -131,10 +131,6 @@ class LocalizationService:
             return TEXT_LOCALIZATION_JSON["plan_regeneration_exceded"][selected_language]
 
         @staticmethod
-        def GenerationTextByWorkType(selected_language, work_type, step):
-            return TEXT_LOCALIZATION_JSON["generation_state"][work_type][step][selected_language]
-
-        @staticmethod
         def GetWelcomeMessage(selected_language):
             return TEXT_LOCALIZATION_JSON["start"][selected_language]
 
@@ -329,3 +325,29 @@ class LocalizationService:
         @staticmethod
         def GetLimitedContextText(selected_language) -> str:
             return TEXT_LOCALIZATION_JSON['context_reached_limit'][selected_language]
+
+        @staticmethod
+        def GetAntiPlagiatText(selected_language) -> str:
+            return TEXT_LOCALIZATION_JSON['anti_plagiat_start'][selected_language]
+        
+        @staticmethod
+        def GetSelectedLanguage(selected_language, translation) -> str:
+            return TEXT_LOCALIZATION_JSON['choosen_language'][selected_language].format(language=translation)
+        
+        @staticmethod
+        def GetThanksForSubscriptionText(selected_language) -> str:
+            return TEXT_LOCALIZATION_JSON['thanks_for_subscription'][selected_language]
+
+        @staticmethod
+        def GetPrefixByName(prefix_name,selected_language) -> str:
+            return TEXT_LOCALIZATION_JSON['prefix_message'][prefix_name][selected_language]
+
+        @staticmethod
+        def GetPhotoSolverWelcomeMessage(selected_language) -> str:
+            return TEXT_LOCALIZATION_JSON['photo_solver_welcome'][selected_language]
+
+        @staticmethod
+        def GetPhotoSolverSolutionMessage(selected_language) -> str:
+            return TEXT_LOCALIZATION_JSON['photo_solver_solution'][selected_language]
+
+        

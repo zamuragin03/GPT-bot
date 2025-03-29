@@ -29,6 +29,10 @@ class Keyboard:
                     KeyboardButton(
                         text='Массовая рассылка'),
                 ],
+                [
+                    KeyboardButton(
+                        text='⬅️Назад⬅️'),
+                ]
 
             ], one_time_keyboard=True, resize_keyboard=True
         )
@@ -48,6 +52,10 @@ class Keyboard:
             [
                 InlineKeyboardButton(
                     text='В прошлом месяце' ,callback_data='last_month')
+            ],
+            [
+                InlineKeyboardButton(
+                    text='⬅️Назад⬅️' ,callback_data='back_to_menu')
             ],
         ])
         return markup
@@ -192,11 +200,12 @@ class Keyboard:
                         text=actions[3]['localization'][selected_language], callback_data=actions[3]['callback_data']
                     ),
                 ],
-                [
-                    InlineKeyboardButton(
-                        text=actions[4]['localization'][selected_language], callback_data=actions[4]['callback_data']
-                    ),
-                ],
+                # for reasoning effort
+                # [
+                #     InlineKeyboardButton(
+                #         text=actions[4]['localization'][selected_language], callback_data=actions[4]['callback_data']
+                #     ),
+                # ],
 
             ]
         )
@@ -351,7 +360,7 @@ class Keyboard:
 
         markup = InlineKeyboardMarkup(inline_keyboard=[
             [InlineKeyboardButton(text=el['localization'][selected_language],
-                                  callback_data=el['callback_data']) for el in actions]])
+                                  callback_data=el['callback_data'])] for el in actions])
         return markup
 
     @staticmethod

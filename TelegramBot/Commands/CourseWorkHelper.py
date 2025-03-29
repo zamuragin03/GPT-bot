@@ -1,9 +1,9 @@
 
 import asyncio
-from Config import dp, bot, gpt_router, PATH_TO_TEMP_FILES, GROUP_LINK_URL
+from Config import dp, bot, gpt_router,router, PATH_TO_TEMP_FILES, GROUP_LINK_URL
 from Keyboards.keyboards import Keyboard, Callbacks
 from aiogram import F
-from States import FSMAdmin, FSMCourseWorkHelper
+from States import FSMUser, FSMCourseWorkHelper
 from aiogram.fsm.context import FSMContext
 from aiogram.filters import *
 from aiogram.types import FSInputFile
@@ -11,6 +11,27 @@ from aiogram.enums.parse_mode import ParseMode
 from aiogram.enums.content_type import ContentType
 from aiogram import types
 from Service import CourseWorkGPTService, BotService, GOSTWordDocument, LocalizationService, CustomFilters
+
+
+
+
+@router.callback_query(
+    FSMUser.select_mode,
+    F.data == 'course_work_helper',
+    CustomFilters.gptTypeFilter('course_work_helper')
+
+)
+async def chart_creator_helper(call: types.CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    course_work_text = LocalizationService.BotTexts.GetCourseWorkText(
+        data.get('language', 'ru'))
+
+    await call.message.edit_text(
+        text=course_work_text,
+        reply_markup=Keyboard.GenerateWorkButton(
+            call.data, data.get('language', 'ru'))
+    )
+    await state.set_state(FSMCourseWorkHelper.choosing_action)
 
 
 @gpt_router.callback_query(
@@ -112,10 +133,10 @@ async def regenerate_plan(call: types.CallbackQuery, state: FSMContext):
     FSMCourseWorkHelper.choosing_plan_generation
 )
 async def auto_plan(call: types.CallbackQuery, state: FSMContext,):
+    data = await state.get_data()
     thinking_message = await call.message.answer(LocalizationService.BotTexts.CreatingPlanMessage(data.get('language','ru')))
     await bot.send_chat_action(call.message.chat.id, action="typing")
 
-    data = await state.get_data()
     course_service = CourseWorkGPTService(
         external_id=call.from_user.id,
         topic=data['topic'],
@@ -186,33 +207,12 @@ async def retrieving_manual_plan(message: types.Message, state: FSMContext,):
     FSMCourseWorkHelper.proceed_action
 )
 async def handleRequestAbstract(call: types.CallbackQuery, state: FSMContext):
-    typing_text = LocalizationService.BotTexts.GenerationTextByWorkType(
-        'ru', 'course_work', 'start')
-    demand_minutes, demand_seconds = 6, 2
-    finish_text = LocalizationService.BotTexts.GenerationTextByWorkType(
-        'ru', 'course_work', 'finish')
-    countdown_message = await call.message.answer(typing_text.format(
-        minutes=demand_minutes,
-        seconds=demand_seconds,
-        url=GROUP_LINK_URL
-    ), parse_mode=ParseMode.HTML)
-    countdown_task = asyncio.create_task(
-        BotService.countdown(call=None,
-                             countdown_message=countdown_message,
-                             duration=demand_minutes*60+demand_seconds,
-                             interval=10,
-                             new_text=typing_text,
-                             finish_text=finish_text)
-    )
     data = await state.get_data()
     course_service: CourseWorkGPTService = data.get('course_service')
-    result = await course_service.build_course_work()
-    countdown_task.cancel()
-    try:
-        await countdown_message.delete()
-    except Exception as e:
-        pass
-
+    result = await BotService.run_process_with_countdown(
+        message=call.message,
+        task=course_service.build_course_work
+    )
     doc_creator = GOSTWordDocument(result)
     doc_creator.create_document()
     end_path = PATH_TO_TEMP_FILES.joinpath(str(call.message.from_user.id)).joinpath(

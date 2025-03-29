@@ -4,11 +4,12 @@ from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram import Router
 import json
+from aiogram.client.default import DefaultBotProperties
 from openai import AsyncOpenAI
 
 scheduler = AsyncIOScheduler()
 
-bot = Bot(BOT_TOKEN,)
+bot = Bot(BOT_TOKEN, default=DefaultBotProperties(parse_mode='HTML'))
 # dp = Dispatcher(storage=redis_storage)
 dp = Dispatcher(storage=MemoryStorage())
 router = Router()

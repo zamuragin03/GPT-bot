@@ -2,23 +2,32 @@ import asyncio
 from Config import dp, bot, admin_router
 from Keyboards.keyboards import Keyboard
 from aiogram import F
-from States import FSMAdmin
+from States import FSMAdmin, FSMUser
 from aiogram.fsm.context import FSMContext
 from aiogram.filters import *
-from aiogram.types import FSInputFile
 from Service import TelegramUserService, AdminService, BotService
 
 from aiogram.enums.parse_mode import ParseMode
 from aiogram import types
-import time
-
-
+    
 @admin_router.message(Command('admin_menu'))
 async def access_admin_menu(message: types.Message, state: FSMContext):
     await message.answer('Выберите действие админа', reply_markup=Keyboard.Get_Admin_Menu())
     await state.set_state(FSMAdmin.choosing_action)
 
 
+@admin_router.message(
+    F.text == '⬅️Назад⬅️',
+    FSMAdmin.choosing_action
+)
+async def Back_to_menu(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    await message.answer(
+        text='Выберите действие',
+        reply_markup=Keyboard.Get_Menu(data.get('language', 'ru'))
+    )
+    await state.set_state(FSMUser.choosing_action)
+    
 @admin_router.message(
     FSMAdmin.choosing_action,
     F.text == 'Статистика',
@@ -35,6 +44,14 @@ async def StatWriting(message: types.Message, state: FSMContext):
 async def StatWriting(message: types.Message, state: FSMContext):
     await message.answer('Выберите период', reply_markup=Keyboard.GetPeriodTypeKb())
 
+
+@admin_router.callback_query(
+    F.data=='back_to_menu',
+    FSMAdmin.choosing_action
+)
+async def back_to_menu(call: types.CallbackQuery, state: FSMContext):
+    await call.message.answer('Выберите действие админа', reply_markup=Keyboard.Get_Admin_Menu())
+    await state.set_state(FSMAdmin.choosing_action)
 
 @admin_router.callback_query(
     F.data.in_({'last_month', 'this_month', 'all_time'})
@@ -104,4 +121,5 @@ async def confirm_mass_message(callback: types.CallbackQuery, state: FSMContext)
 @admin_router.callback_query(F.data == "decline_mass_message")
 async def decline_mass_message(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.answer('Рассылка была отменена.')
-    await state.clear()
+    await callback.message.answer('Выберите действие админа', reply_markup=Keyboard.Get_Admin_Menu())
+    await state.set_state(FSMAdmin.choosing_action)

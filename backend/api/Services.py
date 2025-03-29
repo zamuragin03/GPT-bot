@@ -7,20 +7,50 @@ from django.db.models import Count, Sum
 from .models import TelegramUser, UserAction, AdminTelegramUser, UserSubscription, UserPromocode, Payment
 
 
+from datetime import timedelta
+
 def create_or_extend_subscription(user, sub_type):
-    active_subscription = UserSubscription.objects.filter(
-        user=user, is_active=True).first()
-    if active_subscription:
-        active_subscription.till += timedelta(hours=sub_type.duration)
-        active_subscription.save()
-        return {'status': 'subscription extended', 'subscribtion active till': active_subscription.till}
-    else:
-        UserSubscription.objects.create(
+    # Проверяем, является ли подписка пожизненной
+    if sub_type.duration > 999:
+        # Отключаем все действующие подписки
+        active_subscriptions = UserSubscription.objects.filter(user=user, is_active=True)
+        active_subscriptions.update(is_active=False)  # Массовое обновление статуса
+
+        # Создаём новую пожизненную подписку
+        lifetime_subscription = UserSubscription.objects.create(
             sub_type=sub_type,
             user=user,
             is_active=True
         )
-        return {'status': 'subscription created'}
+        return {
+            'status': 'lifetime subscription created',
+            'subscription type': sub_type.name,
+        }
+
+    # Ищем действующую подписку
+    active_subscription = UserSubscription.objects.filter(
+        user=user, is_active=True
+    ).first()
+
+    if active_subscription:
+        # Продляем текущую подписку
+        active_subscription.till += timedelta(hours=sub_type.duration)
+        active_subscription.save()
+        return {
+            'status': 'subscription extended',
+            'subscription active till': active_subscription.till
+        }
+    else:
+        # Создаём новую подписку
+        new_subscription = UserSubscription.objects.create(
+            sub_type=sub_type,
+            user=user,
+            is_active=True
+        )
+        return {
+            'status': 'subscription created',
+            'subscription type': sub_type.name
+        }
 
 
 class StatisticService:
