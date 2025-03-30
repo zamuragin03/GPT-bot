@@ -35,8 +35,9 @@ class TGUSerApi:
                                      "Authorization": f"Token {AUTH_TOKEN}"},
                             ).json()
 
-    def GetAllTelegramUsers():
+    def GetAllTelegramUsers(**kwargs):
         return requests.get(PROXY+'get_telegram_users',
+                            params=kwargs,
                             headers={"Content-type": "application/json",
                                      "Authorization": f"Token {AUTH_TOKEN}"},
                             ).json()

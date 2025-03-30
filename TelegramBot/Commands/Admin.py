@@ -98,6 +98,7 @@ async def process_mass_message_with_text(message: types.Message, state: FSMConte
 async def confirm_mass_message(callback: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     users = TelegramUserService.GetAllTelegramUsers()
+    print(len(users))
     message_type = data['mass_message_type']
     text = data['mass_message_caption']
     if message_type == 'text':

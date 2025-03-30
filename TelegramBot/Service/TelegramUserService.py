@@ -20,6 +20,6 @@ class TelegramUserService():
 
     @staticmethod
     def GetAllTelegramUsers():
-        return TGUSerApi.GetAllTelegramUsers().get('results')
+        return TGUSerApi.GetAllTelegramUsers(page_size=10000).get('results')
 
     

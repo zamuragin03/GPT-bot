@@ -49,7 +49,7 @@ async def buy_subcription(call: types.CallbackQuery, state: FSMContext, ):
         TelegramUserSubscriptionService.CreateSubscription(
             call.from_user.id, subscription.get('duration'))
     else:
-        invalid_payment_text = LocalizationService.BotTexts.GetPaymentText(
+        invalid_payment_text = LocalizationService.BotTexts.GetPaymentStatusText(
             data.get('language','ru'), False)
         await call.message.answer(
             invalid_payment_text.format(order_id=payment_service.id),
