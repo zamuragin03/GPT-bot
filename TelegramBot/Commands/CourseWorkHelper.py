@@ -176,9 +176,9 @@ async def set_plan(call: types.CallbackQuery, state: FSMContext,):
     FSMCourseWorkHelper.typing_manual_plan
 )
 async def retrieving_manual_plan(message: types.Message, state: FSMContext,):
+    data = await state.get_data()
     thinking_message = await message.answer(LocalizationService.BotTexts.CreatingPlanMessage(data.get('language','ru')))
     user_text = message.text
-    data = await state.get_data()
     course_service = data.get('course_service')
 
     if not course_service:

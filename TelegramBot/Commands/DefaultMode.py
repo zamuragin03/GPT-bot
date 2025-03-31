@@ -29,55 +29,52 @@ async def get_photo(message: types.Message, state: FSMContext):
         await state.update_data(default_mode_helper=default_mode_helper)
     if default_mode_helper.check_if_context_limit_reached():
         await message.reply(
-            text=LocalizationService.BotTexts.GetLimitedContextText(user.get('language', 'ru')),
-            reply_markup=Keyboard.Code_helper_buttons(user.get('language','ru'))
+            text=LocalizationService.BotTexts.GetLimitedContextText(
+                user.get('language', 'ru')),
+            reply_markup=Keyboard.Code_helper_buttons(
+                user.get('language', 'ru'))
         )
         return
-        
-    photo = message.photo[-1]
-    photo_folder = PATH_TO_DOWNLOADED_FILES.joinpath(str(message.from_user.id))
-    photo_folder.mkdir(parents=True, exist_ok=True)
-    photo_path = photo_folder.joinpath(f'{photo.file_unique_id}.jpg')
-
-    await message.bot.download(file=message.photo[-1].file_id, destination=photo_path)
-    base64_img = BotService.encode_image(photo_path)
+    base64_img = await BotService.encode_image(message)
     caption = message.caption or ""
     default_mode_helper.add_message_with_attachement(base64_img, caption)
     result = await BotService.run_process_with_countdown(
         message=message,
         task=default_mode_helper.generate_response  # Задача
     )
-    
+
     await BotService.send_long_message(
         message,
-        result, 
+        result,
         disable_web_page_preview=True,
         parse_mode=ParseMode.HTML,
     )
+
 
 @gpt_free_router.message(
     CustomFilters.gptTypeFilter('default_mode'),
     F.text,
     ~F.text.startswith('/'),
-    
+
 )
 async def get_text(message: types.Message, state: FSMContext):
     data = await state.get_data()
     default_mode_helper = data.get('default_mode_helper')
     if not default_mode_helper:
-        default_mode_helper = DefaultModeGPTService(message.from_user.id, language=data.get('language', 'ru'))
+        default_mode_helper = DefaultModeGPTService(
+            message.from_user.id, language=data.get('language', 'ru'))
         await state.update_data(default_mode_helper=default_mode_helper)
 
     default_mode_helper.add_message(message.text)
-    
+
     result = await BotService.run_process_with_countdown(
         message=message,
         task=default_mode_helper.generate_response  # Задача
     )
-    
+
     await BotService.send_long_message(
         message,
-        result, 
+        result,
         disable_web_page_preview=True,
         parse_mode=ParseMode.HTML,
     )
@@ -144,7 +141,7 @@ async def change_reasoning_effort(call: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     default_mode_helper: DefaultModeGPTService = data.get(
         'default_mode_helper')
-    default_mode_helper.change_reasoning_effort(call.data)  
+    default_mode_helper.change_reasoning_effort(call.data)
     await call.answer(
         text=LocalizationService.BotTexts.GetCancellationText(
             user.get('language')),
