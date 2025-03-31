@@ -202,29 +202,6 @@ async def retrieving_manual_plan(message: types.Message, state: FSMContext,):
     await bot.delete_message(chat_id=message.chat.id, message_id=thinking_message.message_id)
 
 
-@gpt_router.callback_query(
-    F.data == 'proceed_generation',
-    FSMCourseWorkHelper.proceed_action
-)
-async def handleRequestAbstract(call: types.CallbackQuery, state: FSMContext):
-    data = await state.get_data()
-    course_service: CourseWorkGPTService = data.get('course_service')
-    result = await BotService.run_process_with_countdown(
-        message=call.message,
-        task=course_service.build_course_work
-    )
-    doc_creator = GOSTWordDocument(result)
-    doc_creator.create_document()
-    end_path = PATH_TO_TEMP_FILES.joinpath(str(call.message.from_user.id)).joinpath(
-        f'Курсовая_{data["topic"][:25]}_{call.message.message_id}.docx')
-    end_path.parent.mkdir(parents=True, exist_ok=True)
-    doc_creator.save_document(end_path)
-    done_work_text = LocalizationService.BotTexts.DoneWorkText(
-        data.get('language', 'ru'))
-    await call.message.answer_document(
-        FSInputFile(end_path),
-        caption=done_work_text,
-    )
 
 
 @gpt_router.message(
@@ -253,3 +230,52 @@ async def handleRequestAbstract(message: types.Message, state: FSMContext):
         reply_markup=Keyboard.ActionsWithDonePlan(data.get('language','ru'))
     )
     await state.set_state(FSMCourseWorkHelper.choosing_action_with_plan)
+    
+
+@gpt_router.callback_query(
+    F.data == 'proceed_generation',
+    FSMCourseWorkHelper.proceed_action
+)
+async def handleRequestAbstract(call: types.CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    course_service: CourseWorkGPTService = data.get('course_service')
+    result = await BotService.run_process_with_countdown(
+        message=call.message,
+        task=course_service.build_course_work
+    )
+    doc_creator = GOSTWordDocument(result)
+    doc_creator.create_document()
+    end_path = PATH_TO_TEMP_FILES.joinpath(str(call.message.from_user.id)).joinpath(
+        f'Курсовая_{data["topic"][:25]}_{call.message.message_id}.docx')
+    end_path.parent.mkdir(parents=True, exist_ok=True)
+    doc_creator.save_document(end_path)
+    done_work_text = LocalizationService.BotTexts.DoneWorkText(
+        data.get('language', 'ru'))
+    await call.message.answer_document(
+        FSInputFile(end_path),
+        caption=done_work_text,
+    )
+
+@gpt_router.callback_query(
+    F.data == 'proceed_generation',
+    FSMCourseWorkHelper.proceed_action
+)
+async def handleRequestAbstract(call: types.CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    course_service: CourseWorkGPTService = data.get('course_service')
+    result = await BotService.run_process_with_countdown(
+        message=call.message,
+        task=course_service.build_course_work
+    )
+    doc_creator = GOSTWordDocument(result)
+    doc_creator.create_document()
+    end_path = PATH_TO_TEMP_FILES.joinpath(str(call.message.from_user.id)).joinpath(
+        f'Курсовая_{data["topic"][:25]}_{call.message.message_id}.docx')
+    end_path.parent.mkdir(parents=True, exist_ok=True)
+    doc_creator.save_document(end_path)
+    done_work_text = LocalizationService.BotTexts.DoneWorkText(
+        data.get('language', 'ru'))
+    await call.message.answer_document(
+        FSInputFile(end_path),
+        caption=done_work_text,
+    )

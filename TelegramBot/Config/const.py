@@ -1,3 +1,4 @@
+from enum import Enum
 import configparser
 from pathlib import Path
 import sys
@@ -33,7 +34,7 @@ SUBSCRIPTION_LIMITATIONS = {
     "default_mode": UNLIMITED,
     "code_helper": UNLIMITED,
     "chart_creator_helper": UNLIMITED,
-    "anti_plagiarism_system":1,
+    "anti_plagiarism_system": 1,
     "abstract_writer": 1,
     "course_work_helper": 1,
     "final_paper_helper": 1,
@@ -58,12 +59,12 @@ DAILY_LIMITATIONS = {
 }
 
 
-from enum import Enum
-
 class AI_MODELS(Enum):
     O_3_MINI = 'o3-mini'
     GPT_4_O = 'gpt-4o'
-    GPT_4_O_MINI = 'gpt-4o-mini'
+    GPT_4_O_MINI = 'gpt-4o-mini',
+    GPT_4_O_MINI_2024_07_18 = 'gpt-4o-mini-2024-07-18'
+
 
 class REASONING_EFFORT(Enum):
     LOW = 'low'

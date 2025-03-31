@@ -11,7 +11,7 @@ class DefaultModeGPTService:
     def __init__(self, external_id, language):
         self.total_tokens_used = 0
         self.user_external_id = external_id
-        self.model = AI_MODELS.GPT_4_O_MINI
+        self.model = AI_MODELS.GPT_4_O_MINI_2024_07_18
         self.reasoning_effort = REASONING_EFFORT.MEDIUM
         self.auto_save = True
         self.action_type_name = 'default_mode'
@@ -71,6 +71,7 @@ class DefaultModeGPTService:
                 ]
             },
         ]
+        self.total_tokens_used = 0
 
     def add_message_with_attachement(self, base64_image, caption):
         self.messages.append(
@@ -88,7 +89,7 @@ class DefaultModeGPTService:
                 ]
             }
         )
-        self.model = AI_MODELS.GPT_4_O
+        self.model = AI_MODELS.GPT_4_O_MINI_2024_07_18
 
     def set_auto_save(self, flag: bool):
         self.auto_save = flag
