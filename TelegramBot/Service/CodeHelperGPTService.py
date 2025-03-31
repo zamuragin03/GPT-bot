@@ -15,7 +15,7 @@ class CodeHelperGPTService:
     def __init__(self, external_id, language):
         self.external_id = external_id
         self.total_tokens_used = 0
-        self.model = AI_MODELS.O_3_MINI
+        self.model = AI_MODELS.GPT_4_O_MINI_2024_07_18
         self.reasoning_effort = REASONING_EFFORT.MEDIUM
         self.auto_save = True
         self.language = language
