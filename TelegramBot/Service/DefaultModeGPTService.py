@@ -13,7 +13,7 @@ class DefaultModeGPTService:
     def __init__(self, external_id, language):
         self.total_tokens_used = 0
         self.user_external_id = external_id
-        self.model = AI_MODELS.GPT_4_O_MINI
+        self.model = AI_MODELS.GPT_4_O
         self.reasoning_effort = REASONING_EFFORT.MEDIUM
         self.auto_save = True
         self.CONTEXT_LIMIT = 200_000
@@ -78,7 +78,7 @@ class DefaultModeGPTService:
                     {
                             "type": "image_url",
                             "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}
-                            }
+                        }
                 ]
             }
         )
@@ -111,12 +111,15 @@ class DefaultModeGPTService:
         payload = {
             "model": self.model.value,
             "messages": self.messages,  # Make sure all 'content' fields are strings
-            # Makes the response more deterministic
-            "response_format": {"type": "text"},
-            "temperature": 0,
-            "top_p": 0.7,
-            "frequency_penalty": 0,   # Reduces repetition
-            "presence_penalty": 0
+            "response_format": {
+                "type": "text"
+            },
+            "temperature": 1,
+            "max_completion_tokens": 4096,
+            "top_p": 1,
+            "frequency_penalty": 0,
+            "presence_penalty": 0,
+            "store": False
         }
 
         try:
