@@ -93,6 +93,12 @@ class UserActionAdmin(admin.ModelAdmin):
         'created_at',
         'updated_at'
     ]
+    list_filter = (
+        'model',
+        'user',
+        'created_at',
+    )
+    preserve_filters = True
     list_display_links = list_display
 
 

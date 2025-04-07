@@ -1,10 +1,9 @@
 from aiogram.filters import Filter
 from aiogram import types
 from Service import TelegramUserSubscriptionService, LocalizationService
-from Config import SUBSCRIPTION_LIMITATIONS,DAILY_LIMITATIONS
+from Config import SUBSCRIPTION_LIMITATIONS, DAILY_LIMITATIONS
 from aiogram import types
 from typing import Union
-
 
 
 class DocumentTypeFilter(Filter):
@@ -19,26 +18,30 @@ class DocumentTypeFilter(Filter):
 
 
 class gptTypeFilter(Filter):
-    # TODO lifetime подписку обработать
-    
     def __init__(self, action_type):
         self.action_type = action_type
 
     async def __call__(self, event: Union[types.Message, types.CallbackQuery],) -> bool:
+        if isinstance(event, types.callback_query.CallbackQuery):
+            user_id = event.from_user.id
+        elif isinstance(event, types.message.Message):
+            user_id = event.from_user.id
         subscription = TelegramUserSubscriptionService.GetUserActiveSubscription(
-            event.from_user.id
+            user_id
         )
-
+        print(f'user_id from filter {self.action_type}',user_id)
         if subscription:
             limitation_object, limits = self._get_limitations(
-                TelegramUserSubscriptionService.GetUserLimitations(event.from_user.id),
+                TelegramUserSubscriptionService.GetUserLimitations(user_id),
                 SUBSCRIPTION_LIMITATIONS
             )
         else:
             limitation_object, limits = self._get_limitations(
-                TelegramUserSubscriptionService.GetUserDailyLimitations(event.from_user.id),
+                TelegramUserSubscriptionService.GetUserDailyLimitations(
+                    user_id),
                 DAILY_LIMITATIONS
             )
+        
         if not limitation_object:
             return await self._handle_limit_exceeded(event, user_language=None)
 
@@ -54,15 +57,15 @@ class gptTypeFilter(Filter):
         return limitation_object, limits
 
     async def _handle_limit_exceeded(self, event, user_language):
-        if user_language:
-            message = LocalizationService.BotTexts.GetLimitiedText(user_language)
-        else:
-            message = LocalizationService.BotTexts.GetLimitiedText("ru")
-
+        message = LocalizationService.BotTexts.GetLimitiedText(user_language if user_language else "ru")
         await event.answer(
             text=message,
             show_alert=True
         )
         return False
 
-        
+class PinFilter(Filter):
+    async def __call__(self, message: types.Message) -> bool:
+        print('pin filter')
+        return message.pinned_message is not None
+    

@@ -1,14 +1,44 @@
 import asyncio
 from aiogram.enums.content_type import ContentType
-from Config import dp, bot, gpt_free_router, GROUP_LINK_URL, PATH_TO_DOWNLOADED_FILES
+from Config import dp, bot,  gpt_free_router, GROUP_LINK_URL, PATH_TO_DOWNLOADED_FILES, EASY_EXTENSION_FILES
 from Keyboards import Keyboard, KeyboardService
 from aiogram import F
 from aiogram.fsm.context import FSMContext
 from States import FSMUser, FSMAdmin
 from aiogram.filters import *
-from Service import LocalizationService, DefaultModeGPTService, BotService, TelegramUserService, CustomFilters
+from Service import LocalizationService, DefaultModeGPTService, BotService, TelegramUserService, CustomFilters, DocumentTypeFilter
 from aiogram import types
 from aiogram.enums.parse_mode import ParseMode
+
+
+@gpt_free_router.message(
+    F.pinned_message
+)
+async def handle_pin_event(message: types.Message):
+    pass
+
+
+@gpt_free_router.callback_query(
+    FSMUser.select_mode,
+    F.data == 'default_mode',
+    CustomFilters.gptTypeFilter('default_mode'),
+)
+async def default_mode(call: types.CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    default_helper_text = LocalizationService.BotTexts.GetDefaultHelperText(
+        data.get('language', 'ru'))
+    default_mode_helper = data.get('default_mode_helper')
+    if not default_mode_helper:
+        default_mode_helper = DefaultModeGPTService(
+            external_id=call.from_user.id, language=data.get('language', 'ru'))
+        await state.update_data(default_mode_helper=default_mode_helper)
+    await call.message.edit_text(
+        text=default_helper_text,
+        reply_markup=Keyboard.Code_helper_buttons(data.get('language', 'ru')),
+        parse_mode='HTML'
+    )
+    await call.message.pin()
+    await bot.unpin_all_chat_messages(chat_id=call.message.chat.id)
 
 
 @gpt_free_router.message(
@@ -42,20 +72,59 @@ async def get_photo(message: types.Message, state: FSMContext):
         message=message,
         task=default_mode_helper.generate_response  # Задача
     )
+    try:
+        await BotService.send_long_message(
+            message,
+            result,
+            disable_web_page_preview=True,
+            parse_mode=ParseMode.HTML,
+        )
+    except:
+        await BotService.send_long_message(
+            message,
+            result,
+            disable_web_page_preview=True,
+            parse_mode=None,
+        )
 
-    await BotService.send_long_message(
-        message,
-        result,
-        disable_web_page_preview=True,
-        parse_mode=ParseMode.HTML,
+
+@gpt_free_router.message(
+    F.document,
+    CustomFilters.gptTypeFilter('default_mode'),
+    DocumentTypeFilter(document_types=EASY_EXTENSION_FILES)
+)
+async def get_easy_document(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    file_content = await BotService.getFileContent(bot, message)
+    user = TelegramUserService.GetTelegramUserByExternalId(
+        message.from_user.id)
+
+    default_mode_helper = data.get('default_mode_helper')
+
+    if not default_mode_helper:
+        default_mode_helper = DefaultModeGPTService(
+            external_id=message.from_user.id, language=user.get('language', 'ru'))
+        await state.update_data(default_mode_helper=default_mode_helper)
+    default_mode_helper.add_file_message(
+        file_content=file_content,
+        caption=message.caption if message.caption else ''
     )
+    result = await BotService.run_process_with_countdown(
+        message=message,
+        task=default_mode_helper.generate_response  # Задача
+    )
+    await BotService.send_long_message(
+            message,
+            result,
+            disable_web_page_preview=True,
+            parse_mode=ParseMode.HTML,
+        )
 
 
 @gpt_free_router.message(
     CustomFilters.gptTypeFilter('default_mode'),
     F.text,
     ~F.text.startswith('/'),
-
 )
 async def get_text(message: types.Message, state: FSMContext):
     data = await state.get_data()
@@ -72,12 +141,21 @@ async def get_text(message: types.Message, state: FSMContext):
         task=default_mode_helper.generate_response  # Задача
     )
 
-    await BotService.send_long_message(
-        message,
-        result,
-        disable_web_page_preview=True,
-        parse_mode=ParseMode.HTML,
-    )
+    try:
+        await BotService.send_long_message(
+            message,
+            result,
+            disable_web_page_preview=True,
+            parse_mode=ParseMode.HTML,
+        )
+    except Exception as e:
+        print(e)
+        await BotService.send_long_message(
+            message,
+            result,
+            disable_web_page_preview=True,
+            parse_mode=None,
+        )
 
 
 @gpt_free_router.callback_query(

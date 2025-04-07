@@ -34,12 +34,12 @@ SUBSCRIPTION_LIMITATIONS = {
     "default_mode": UNLIMITED,
     "code_helper": UNLIMITED,
     "chart_creator_helper": UNLIMITED,
-    "anti_plagiarism_system": 1,
+    "antiplagiat_helper": 1,
     "abstract_writer": 1,
     "course_work_helper": 1,
-    "final_paper_helper": 1,
+    "science_article_helper": 1,
     "essay_helper": 1,
-    "photo_issue_helper": 3,
+    "photo_issue_helper": UNLIMITED,
     "power_point_helper": 3,
     "rewriting_helper": 2,
 }
@@ -50,19 +50,19 @@ DAILY_LIMITATIONS = {
     "chart_creator_helper": NO_ACCESS,
     "abstract_writer": NO_ACCESS,
     "course_work_helper": NO_ACCESS,
-    "final_paper_helper": NO_ACCESS,
+    "science_article_helper": NO_ACCESS,
     "essay_helper": NO_ACCESS,
     "photo_issue_helper": NO_ACCESS,
     "power_point_helper": NO_ACCESS,
     "rewriting_helper": NO_ACCESS,
-    "anti_plagiarism_system": NO_ACCESS,
+    "antiplagiat_helper": NO_ACCESS,
 }
 
 
 class AI_MODELS(Enum):
     O_3_MINI = 'o3-mini'
     GPT_4_O = 'gpt-4o'
-    GPT_4_O_MINI = 'gpt-4o-mini',
+    GPT_4_O_MINI = 'gpt-4o-mini'
     GPT_4_O_MINI_2024_07_18 = 'gpt-4o-mini-2024-07-18'
 
 
@@ -70,3 +70,37 @@ class REASONING_EFFORT(Enum):
     LOW = 'low'
     MEDIUM = 'medium'
     HIGHT = 'high'
+
+
+EASY_EXTENSION_FILES = [
+    'txt',  # Plain text files
+    'py',   # Python scripts
+    'cs',   # C# source files
+    'cpp',  # C++ source files
+    'c',    # C source files
+    'java',  # Java source files
+    'js',   # JavaScript files
+    'ts',   # TypeScript files
+    'html',  # HTML files
+    'css',  # CSS files
+    'xml',  # XML files
+    'json',  # JSON files
+    'yaml',  # YAML files
+    'yml',  # YAML files (alternative extension)
+    'csv',  # CSV files
+    'md',   # Markdown files
+    'ini',  # Configuration files
+    'log',  # Log files
+    'sh',   # Shell scripts
+    'bat',  # Batch scripts
+    'sql',  # SQL files
+    'go',   # Go source files
+    'rs',   # Rust source files
+    'swift',  # Swift source files
+    'dart',  # Dart source files
+    'r',    # R script files
+    'pl',   # Perl script files
+    'rb',   # Ruby script files
+    'kt',   # Kotlin source files
+    'vb',   # Visual Basic files
+]

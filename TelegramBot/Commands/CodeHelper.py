@@ -1,5 +1,5 @@
 import asyncio
-from Config import dp, bot, gpt_router, router, GROUP_LINK_URL
+from Config import dp, bot, gpt_router, GROUP_LINK_URL
 from Keyboards import Keyboard, KeyboardService
 from aiogram import F
 from States import FSMCodeHelper, FSMUser
@@ -14,7 +14,7 @@ from aiogram import types
 # handle message with code helper
 
 
-@router.callback_query(
+@gpt_router.callback_query(
     FSMUser.select_mode,
     F.data == 'code_helper',
     CustomFilters.gptTypeFilter('code_helper')
@@ -32,8 +32,9 @@ async def select_language(call: types.CallbackQuery, state: FSMContext):
         text=LocalizationService.BotTexts.GetCodeHelperText(
             data.get('language', 'ru')),
         reply_markup=Keyboard.Code_helper_buttons(data.get('language', 'ru'))
-
     )
+    await bot.unpin_all_chat_messages(chat_id=call.message.chat.id)
+    await call.message.pin()
     await state.set_state(FSMCodeHelper.typing_message)
 
 

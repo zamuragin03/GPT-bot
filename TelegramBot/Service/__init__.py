@@ -9,6 +9,7 @@ from .EssayGPTService import EssayGPTService
 from .RewritingGPTService import RewritingGPTService
 from .SolvePhotoGPTService import SolvePhotoGPTService
 # api's
+from .AntiplagiatService import AntiplagiatService
 from .TelegramUserService import TelegramUserService
 from .TelegramUserSubscriptionService import TelegramUserSubscriptionService
 from .UserActionService import UserActionService

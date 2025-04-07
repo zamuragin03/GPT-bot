@@ -9,7 +9,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.filters import *
 from aiogram.types import FSInputFile
 from aiogram.enums.parse_mode import ParseMode
-from aiogram.enums.content_type import ContentType
+import random
 from aiogram import types
 from Service import LocalizationService, BotService, AbstractWorkGPTService, GOSTWordDocument, CustomFilters
 
@@ -171,7 +171,6 @@ async def handleRequestAbstract(call: types.CallbackQuery, state: FSMContext):
     await bot.send_chat_action(call.message.chat.id, action="typing")
     abstract_service.regenerate_plan()
     plan = await abstract_service.get_plan_response()
-
     parsed_plan = BotService.parse_work_plan(plan)
     await call.message.answer(
         parsed_plan,
@@ -210,7 +209,7 @@ async def handleRequestAbstract(call: types.CallbackQuery, state: FSMContext):
     doc_creator = GOSTWordDocument(result)
     doc_creator.create_document()
     end_path = PATH_TO_TEMP_FILES.joinpath(str(call.from_user.id)).joinpath(
-        f'abstract_{data["topic"][:25]}_{call.message.message_id}.docx')
+        f'abstract_{data["topic"][:25]}_{random.randint(1000,2000)}_{call.message.message_id}.docx')
     end_path.parent.mkdir(parents=True, exist_ok=True)
     doc_creator.save_document(end_path)
     done_work_text = LocalizationService.BotTexts.DoneWorkText(
@@ -220,6 +219,10 @@ async def handleRequestAbstract(call: types.CallbackQuery, state: FSMContext):
         FSInputFile(end_path),
         caption=done_work_text,
     )
+    await BotService.go_menu(bot=bot,event=call, state=state, final_state=FSMUser.select_mode )
+
+
+    
 
 
 @gpt_router.callback_query(

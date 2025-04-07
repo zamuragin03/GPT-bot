@@ -12,7 +12,7 @@ from aiogram.enums.content_type import ContentType
 from aiogram import types
 from Service import LocalizationService
 from Service import BotService, EssayGPTService, CustomFilters,GOSTWordEssayDocument
-
+import random
 
 @router.callback_query(
     FSMUser.select_mode,
@@ -128,10 +128,10 @@ async def retrieving_manual_plan(message: types.Message, state: FSMContext,):
     FSMEssayhelper.choosing_plan_generation
 )
 async def auto_plan(call: types.CallbackQuery, state: FSMContext,):
+    data = await state.get_data()
     thinking_message = await call.message.answer(LocalizationService.BotTexts.CreatingPlanMessage(data.get('language', 'ru')))
     await bot.send_chat_action(call.message.chat.id, action="typing")
 
-    data = await state.get_data()
     essay_service = EssayGPTService(
         external_id=call.from_user.id,
         topic=data['topic'],
@@ -228,6 +228,9 @@ async def handleRequestAbstract(call: types.CallbackQuery, state: FSMContext):
         FSInputFile(end_path),
         caption=done_work_text,
     )
+    await BotService.go_menu(bot=bot,event=call, state=state, final_state=FSMUser.select_mode )
+
+    
 
 
 @gpt_router.callback_query(

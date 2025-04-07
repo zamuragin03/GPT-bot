@@ -11,7 +11,7 @@ from aiogram.enums.parse_mode import ParseMode
 from aiogram.enums.content_type import ContentType
 from aiogram import types
 from Service import CourseWorkGPTService, BotService, GOSTWordDocument, LocalizationService, CustomFilters
-
+import random
 
 
 
@@ -270,7 +270,7 @@ async def handleRequestAbstract(call: types.CallbackQuery, state: FSMContext):
     doc_creator = GOSTWordDocument(result)
     doc_creator.create_document()
     end_path = PATH_TO_TEMP_FILES.joinpath(str(call.message.from_user.id)).joinpath(
-        f'Курсовая_{data["topic"][:25]}_{call.message.message_id}.docx')
+        f'Курсовая_{data["topic"][:25]}_{random.randint(1000,2000)}_{call.message.message_id}.docx')
     end_path.parent.mkdir(parents=True, exist_ok=True)
     doc_creator.save_document(end_path)
     done_work_text = LocalizationService.BotTexts.DoneWorkText(
@@ -279,3 +279,6 @@ async def handleRequestAbstract(call: types.CallbackQuery, state: FSMContext):
         FSInputFile(end_path),
         caption=done_work_text,
     )
+    await BotService.go_menu(bot=bot,event=call, state=state, final_state=FSMUser.select_mode )
+
+    

@@ -37,29 +37,28 @@ class Keyboard:
             ], one_time_keyboard=True, resize_keyboard=True
         )
         return markup
-    
+
     @staticmethod
     def GetPeriodTypeKb():
         markup = InlineKeyboardMarkup(inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text='Все время' ,callback_data='all_time')
+                    text='Все время', callback_data='all_time')
             ],
             [
                 InlineKeyboardButton(
-                    text='В этом месяце' ,callback_data='this_month')
+                    text='В этом месяце', callback_data='this_month')
             ],
             [
                 InlineKeyboardButton(
-                    text='В прошлом месяце' ,callback_data='last_month')
+                    text='В прошлом месяце', callback_data='last_month')
             ],
             [
                 InlineKeyboardButton(
-                    text='⬅️Назад⬅️' ,callback_data='back_to_menu')
+                    text='⬅️Назад⬅️', callback_data='back_to_menu')
             ],
         ])
         return markup
-
 
     @staticmethod
     def GetMassMessageConfirmationKeyboard():
@@ -70,7 +69,11 @@ class Keyboard:
                         text="Подтвердить", callback_data="confirm_mass_message"),
                     InlineKeyboardButton(
                         text="Отклонить", callback_data="decline_mass_message"),
-                ]
+                ],
+                [
+                    InlineKeyboardButton(
+                        text='⬅️Назад⬅️', callback_data='back_to_menu')
+                ],
             ]
         )
         return keyboard
@@ -314,6 +317,19 @@ class Keyboard:
 
                 ],
 
+            ]
+        )
+        return markup
+
+    @staticmethod
+    def Get_Result_Button(selected_language, result_url):
+        result_button = LocalizationService.KeyboardTexts.GetAntiPlagiatResultButton()
+        markup = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text=result_button['localization'][selected_language], callback_data=result_button['callback_data'], url=result_url),
+                ]
             ]
         )
         return markup

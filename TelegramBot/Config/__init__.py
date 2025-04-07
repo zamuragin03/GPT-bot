@@ -14,7 +14,8 @@ from .const import (PATH_TO_DOWNLOADED_FILES,
                     REASONING_EFFORT, 
                     PATH_TO_TEMP_WATERMARK,
                     ANTI_PLAGIAT_API,
-                    X_USER_ID
+                    X_USER_ID,
+                    EASY_EXTENSION_FILES
                     )
 from .initialize import (bot,
                          dp,

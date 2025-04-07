@@ -81,3 +81,6 @@ async def handle_txt(message: types.Message, state: FSMContext):
             data.get('language', 'ru')),
         parse_mode=ParseMode.HTML,
     )
+    await BotService.go_menu(bot=bot,event=message, state=state, final_state=FSMUser.select_mode )
+    
+    

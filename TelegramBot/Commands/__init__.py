@@ -12,6 +12,7 @@ from .Middlewares import SubscriptionMiddleware, CaptchaMiddleWare, GPTSubscript
 
 # GPT ROUTERS
 from .CodeHelper import gpt_router
+from .AntiPlagitatHelper import gpt_router
 from .SolvePhotoProblem import gpt_router
 from .ChartHelper import gpt_router
 from .AbstractHelper import gpt_router

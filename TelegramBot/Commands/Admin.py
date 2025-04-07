@@ -9,7 +9,9 @@ from Service import TelegramUserService, AdminService, BotService
 
 from aiogram.enums.parse_mode import ParseMode
 from aiogram import types
-    
+
+
+
 @admin_router.message(Command('admin_menu'))
 async def access_admin_menu(message: types.Message, state: FSMContext):
     await message.answer('Выберите действие админа', reply_markup=Keyboard.Get_Admin_Menu())
@@ -23,6 +25,18 @@ async def access_admin_menu(message: types.Message, state: FSMContext):
 async def Back_to_menu(message: types.Message, state: FSMContext):
     data = await state.get_data()
     await message.answer(
+        text='Выберите действие',
+        reply_markup=Keyboard.Get_Menu(data.get('language', 'ru'))
+    )
+    await state.set_state(FSMUser.choosing_action)
+    
+@admin_router.callback_query(
+    F.data == 'back_to_menu',
+    FSMAdmin.type_mass_message
+)
+async def Back_to_menu(call: types.CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    await call.message.answer(
         text='Выберите действие',
         reply_markup=Keyboard.Get_Menu(data.get('language', 'ru'))
     )
@@ -49,6 +63,14 @@ async def StatWriting(message: types.Message, state: FSMContext):
     F.data=='back_to_menu',
     FSMAdmin.choosing_action
 )
+@admin_router.callback_query(
+    F.data=='back_to_menu',
+    FSMAdmin.choosing_yes_or_no
+)
+@admin_router.callback_query(
+    F.data=='back_to_menu',
+    FSMAdmin.type_mass_message
+)
 async def back_to_menu(call: types.CallbackQuery, state: FSMContext):
     await call.message.answer('Выберите действие админа', reply_markup=Keyboard.Get_Admin_Menu())
     await state.set_state(FSMAdmin.choosing_action)
@@ -70,7 +92,7 @@ async def get_stat(call: types.CallbackQuery, state: FSMContext):
     F.text == 'Массовая рассылка',
 )
 async def mass_message(message: types.Message, state: FSMContext):
-    await message.answer('Отправьте текст(с фото или без) для рассылки')
+    await message.answer('Отправьте текст(с фото или без) для рассылки', reply_markup=Keyboard.Get_Back_Button('ru'))
     await state.set_state(FSMAdmin.type_mass_message)
 
 
@@ -91,14 +113,18 @@ async def process_mass_message_with_text(message: types.Message, state: FSMConte
     await state.update_data(mass_message_type='text', mass_message_caption=message.text)
 
     await message.answer(text=f"Ваше сообщение:\n\n{message.text}", reply_markup=Keyboard.GetMassMessageConfirmationKeyboard())
+    await state.set_state(FSMAdmin.choosing_yes_or_no)
+
 
 
 # Обработка подтверждения рассылки
-@admin_router.callback_query(F.data == "confirm_mass_message")
+@admin_router.callback_query(
+    F.data == "confirm_mass_message",
+    FSMAdmin.choosing_yes_or_no
+    )
 async def confirm_mass_message(callback: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     users = TelegramUserService.GetAllTelegramUsers()
-    print(len(users))
     message_type = data['mass_message_type']
     text = data['mass_message_caption']
     if message_type == 'text':
@@ -119,7 +145,10 @@ async def confirm_mass_message(callback: types.CallbackQuery, state: FSMContext)
     await state.clear()
 
 
-@admin_router.callback_query(F.data == "decline_mass_message")
+@admin_router.callback_query(
+    F.data == "decline_mass_message",
+    FSMAdmin.choosing_yes_or_no
+    )
 async def decline_mass_message(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.answer('Рассылка была отменена.')
     await callback.message.answer('Выберите действие админа', reply_markup=Keyboard.Get_Admin_Menu())

@@ -3,8 +3,9 @@ import asyncio
 from Config import (client,
                     ABSTRACT_WORK_BODY_SYSTEM_PROMPT,
                     ABSTRACT_WORK_SYSTEM_PROMPT_FOR_PLAN
-
                     )
+from DataModels.AbstractDataModel import PlanResponse, ParagraphResponse
+from langchain.output_parsers import PydanticOutputParser
 from .UserActionService import UserActionService
 
 
@@ -14,6 +15,9 @@ class AbstractWorkGPTService:
         self.page_number = page_number
         self.model = "gpt-4o"
         self.action_type_name = 'abstract_writer'
+        self.plan_parser = PydanticOutputParser(pydantic_object=PlanResponse)
+        self.paragraph_parser = PydanticOutputParser(
+            pydantic_object=ParagraphResponse)
         self.input_tokens = 0
         self.output_tokens = 0
         self.retries_count = 0
@@ -49,6 +53,11 @@ class AbstractWorkGPTService:
             },
         )
 
+    def is_retries_allowed(self, is_manual=False):
+        if is_manual:
+            return self.retries_manual_count < 3
+        return self.retries_count < 3
+
     def append_assistant_message(self, message_list: list, assistant_text):
         message_list.append(
             {
@@ -71,25 +80,23 @@ class AbstractWorkGPTService:
             self.init_plan_messages, f'Напиши план реферата по теме {self.topic}')
 
     async def get_plan_response(self):
-        response = await client.chat.completions.create(
+        response = await client.beta.chat.completions.parse(
             model=self.model,
-            messages=self.init_plan_messages
+            messages=self.init_plan_messages,
+            response_format=PlanResponse
         )
-
         self.update_tokens(response)
         plan = response.choices[0].message.content
         self.append_assistant_message(self.init_plan_messages, plan)
-        self.plan = plan
+        self.plan: PlanResponse = self.plan_parser.parse(plan)
         self.init_body_messages = self.create_system_message(
             ABSTRACT_WORK_BODY_SYSTEM_PROMPT.format(
-                topic=self.topic, plan=self.plan, page_number=self.page_number*3)
+                topic=self.topic,
+                plan=self.plan.model_dump(),
+                page_number=self.page_number*3
+            )
         )
         return self.plan
-
-    def is_retries_allowed(self, is_manual=False):
-        if is_manual:
-            return self.retries_manual_count < 3
-        return self.retries_count < 3
 
     def regenerate_plan(self):
         self.retries_count += 1
@@ -101,33 +108,24 @@ class AbstractWorkGPTService:
         self.append_user_message(
             self.init_plan_messages, f'Сгенерируй другой план с учетом пожелания пользователя:{user_message}. Если считаешь пожелание пользователя неадекватным, то просто сгенерируй новый план')
 
-    @staticmethod
-    def extract_headers(text):
-        headers_pattern = re.compile(r"(<h[12]>.*?<\/h[12]>)")
-        headers = headers_pattern.findall(text)
-        return headers
-
     # это метод для написания каждого параграфа
     async def write_chapter(self, chapter_name):
         self.append_user_message(
             self.init_body_messages, f'Напиши текст для раздела "{chapter_name}"')
-        # if str(chapter_name).startswith('<h1>'):
-        #     self.append_assistant_message(
-        #         self.init_body_messages, chapter_name)
-        #     return
-        response = await client.chat.completions.create(
+        response = await client.beta.chat.completions.parse(
             model=self.model,
-            messages=self.init_body_messages
+            messages=self.init_body_messages,
+            response_format=ParagraphResponse
         )
         self.update_tokens(response)
         self.append_assistant_message(
             self.init_body_messages, response.choices[0].message.content)
 
     async def build_abstract_work(self):
-        self.list_of_chapters = AbstractWorkGPTService.extract_headers(
-            self.plan)
+        self.list_of_chapters = self.plan.headings
         for chapter in self.list_of_chapters:
-            await self.write_chapter(chapter)
+            await self.write_chapter(chapter.heading_text)
+
         UserActionService.CreateUserAction(
             input_tokens=self.input_tokens,
             output_tokens=self.output_tokens,
@@ -136,8 +134,12 @@ class AbstractWorkGPTService:
             action_type_name=self.action_type_name,
             user_external_id=self.user_external_id
         )
-        return list(filter(lambda x: x.get('role') == 'assistant', self.init_body_messages))
-    
-    async def build_abstract_work_mock(self):
-        await asyncio.sleep(10)
-        
+        result_data = self.init_body_messages.copy()
+        result_data.pop(0)
+
+        return [
+            el['content'][0]['text'].replace(
+                'Напиши текст для раздела ', '').replace('"', '')
+            if el['role'] == 'user' else self.paragraph_parser.parse(el['content'][0]['text']).paragraphs
+            for el in result_data
+        ]

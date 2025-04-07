@@ -65,7 +65,8 @@ async def start(message: types.Message, state: FSMContext, ):
 )
 async def start(call: types.CallbackQuery, state: FSMContext, ):
     data = await state.get_data()
-    thanks_text = LocalizationService.BotTexts.GetThanksForSubscriptionText(data.get('language','ru'))
+    thanks_text = LocalizationService.BotTexts.GetThanksForSubscriptionText(
+        data.get('language', 'ru'))
     await call.answer(thanks_text, show_alert=True)
     if data.get('language'):
         hr_text = LocalizationService.BotTexts.GetHumanReadableLanguage(
@@ -117,17 +118,11 @@ async def start(call: types.CallbackQuery, state: FSMContext, ):
     FSMPhotoProblem.sending_message
 )
 @router.callback_query(
-    F.data=='back_to_menu_from_default_mode'
+    F.data == 'back_to_menu_from_default_mode'
 )
 async def menu_call(call: types.CallbackQuery, state: FSMContext):
-    data = await state.get_data()
-    await call.message.edit_text(
-        text=LocalizationService.BotTexts.GetInstrumentsText(
-            data.get('language', 'ru')),
-        reply_markup=Keyboard.Get_Instruments(
-            call.from_user.id, data.get('language', 'ru'))
-    )
-    await state.set_state(FSMUser.select_mode)
+
+    await BotService.go_menu(bot=bot, event=call, state=state, final_state=FSMUser.select_mode)
 
 
 @router.message(
@@ -138,14 +133,9 @@ async def menu_call(call: types.CallbackQuery, state: FSMContext):
     F.text.in_(KeyboardService.get_menu_option_localization('instruments'))
 )
 async def instuments(message: types.Message, state: FSMContext):
-    data = await state.get_data()
-    await message.answer(
-        text=LocalizationService.BotTexts.GetInstrumentsText(
-            data.get('language', 'ru')),
-        reply_markup=Keyboard.Get_Instruments(
-            message.from_user.id, data.get('language', 'ru'))
-    )
-    await state.set_state(FSMUser.select_mode)
+    await BotService.go_menu(bot=bot, event=message, state=state, final_state=FSMUser.select_mode)
+
+
 # Инструменты и коллбэк на inline кнопки
 
 # Обработка приобретения подписки
@@ -160,9 +150,9 @@ async def instuments(message: types.Message, state: FSMContext):
 )
 async def buy_subscription(message: types.Message, state: FSMContext):
     data = await state.get_data()
-    subscription_text = LocalizationService.BotTexts.SubscriptionText(
-        data.get('language', 'ru'))
     subscription = SubscriptionTypeService.GetSubscriptionByDuration(168)
+    subscription_text = BotService.GetSubscriptionPrice(
+        data.get('language', 'ru'), subscription)
     await message.answer(
         text=subscription_text,
         parse_mode='HTML',
@@ -173,13 +163,13 @@ async def buy_subscription(message: types.Message, state: FSMContext):
 
 
 @router.callback_query(
-    F.data=='buy_subscription'
+    F.data == 'buy_subscription'
 )
 async def buy_subscription(call: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
-    subscription_text = LocalizationService.BotTexts.SubscriptionText(
-        data.get('language', 'ru'))
     subscription = SubscriptionTypeService.GetSubscriptionByDuration(168)
+    subscription_text = BotService.GetSubscriptionPrice(
+        data.get('language', 'ru'), subscription)
     await call.message.answer(
         text=subscription_text,
         parse_mode='HTML',
@@ -199,9 +189,9 @@ async def buy_subscription(call: types.CallbackQuery, state: FSMContext):
 )
 async def buy_subscription(call: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
-    subscription_text = LocalizationService.BotTexts.SubscriptionText(
-        data.get('language', 'ru'))
     subscription = SubscriptionTypeService.GetSubscriptionByDuration(168)
+    subscription_text = BotService.GetSubscriptionPrice(
+        data.get('language', 'ru'), subscription)
     await call.message.edit_text(
         text=subscription_text,
         parse_mode='HTML',
@@ -238,7 +228,8 @@ async def menu(call: types.CallbackQuery, state: FSMContext):
     F.data.in_(KeyboardService.get_language_codes())
 )
 async def menu(call: types.CallbackQuery, state: FSMContext):
-    human_readable_language = LocalizationService.BotTexts.GetHumanReadableLanguage(call.data)
+    human_readable_language = LocalizationService.BotTexts.GetHumanReadableLanguage(
+        call.data)
     await call.answer(LocalizationService.BotTexts.GetSelectedLanguage(call.data, human_readable_language), show_alert=True)
     await call.message.delete()
     data = await state.get_data()
@@ -264,7 +255,6 @@ async def menu(call: types.CallbackQuery, state: FSMContext):
 
 
 # handle message with chart create
-
 
 
 # Обработка нажатия на реферальную систему
@@ -373,24 +363,3 @@ async def change_language(call: types.CallbackQuery, state: FSMContext):
 
 
 # Обработка нажатия на помощь
-
-
-@router.callback_query(
-    FSMUser.select_mode,
-    F.data == 'default_mode',
-    CustomFilters.gptTypeFilter('default_mode')
-)
-async def default_mode(call: types.CallbackQuery, state: FSMContext):
-    data = await state.get_data()
-    default_helper_text = LocalizationService.BotTexts.GetDefaultHelperText(
-        data.get('language', 'ru'))
-    default_mode_helper = data.get('default_mode_helper')
-    if not default_mode_helper:
-        default_mode_helper = DefaultModeGPTService(external_id=call.from_user.id, language=data.get('language', 'ru'))
-        await state.update_data(default_mode_helper=default_mode_helper)
-    await call.message.edit_text(
-        text=default_helper_text,
-        reply_markup=Keyboard.Code_helper_buttons(data.get('language', 'ru')),
-        parse_mode='HTML'
-    )
-

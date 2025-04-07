@@ -95,6 +95,10 @@ class LocalizationService:
         @staticmethod
         def GetPPTXFetchMode() -> str:
             return BUTTON_LOCALIZATION_JSON['choose_fetch_images']
+        
+        @staticmethod
+        def GetAntiPlagiatResultButton() -> str:
+            return BUTTON_LOCALIZATION_JSON['get_antiplagiat_result']
 
     class BotTexts:
 
@@ -329,6 +333,10 @@ class LocalizationService:
         @staticmethod
         def GetAntiPlagiatText(selected_language) -> str:
             return TEXT_LOCALIZATION_JSON['anti_plagiat_start'][selected_language]
+        
+        @staticmethod
+        def GetAntiPlagiatDoneText(selected_language) -> str:
+            return TEXT_LOCALIZATION_JSON['anti_plagiat_done'][selected_language]
         
         @staticmethod
         def GetSelectedLanguage(selected_language, translation) -> str:

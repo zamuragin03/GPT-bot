@@ -2,6 +2,7 @@ from typing import Any, Awaitable, Callable, Dict
 from aiogram import BaseMiddleware
 from aiogram.types import Message, CallbackQuery
 from Keyboards import Keyboard
+from aiogram import types
 from Config import SUBSCRIPTION_LIMITATIONS
 from Service import TelegramUserService, BotService, TelegramUserSubscriptionService, LocalizationService, AdminService
 from aiogram.fsm.context import FSMContext
@@ -94,9 +95,17 @@ class GPTSubscriptionMiddleware(BaseMiddleware):
             handler: Callable[[TelegramObject, Dict[str,    Any]], Awaitable[Any]],
             event: Union[Message, CallbackQuery],
             data: Dict[str, Any]) -> Any:
+        
+        if isinstance(event, types.callback_query.CallbackQuery):
+            message = event.message
+            user_id = event.from_user.id
+        else:
+            message = event
+            user_id = message.from_user.id
+        print('user_id from middleware',user_id)
+        
         subscription = TelegramUserSubscriptionService.GetUserActiveSubscription(
-            event.from_user.id)
-
+            user_id)
         if subscription:
             return await handler(event, data)
         else:

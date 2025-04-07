@@ -51,12 +51,12 @@ class GOSTWordBaseDocument:
             run.font.color.rgb = RGBColor(0, 0, 0)
             run.font.size = Pt(12)
 
-    def parse_html_content(self, html_content):
-        # Разделение контента на части по тегам заголовков и параграфов
-        content_parts = re.split(
-            r'(<h1>.*?</h1>|<h2>.*?</h2>|<p>.*?</p>)', html_content)
-        # Удаление пустых строк и строк, состоящих только из перевода строки
-        return [part for part in content_parts if part.strip() and part != '\n']
+    def extract_text(self, input_string):
+        allowed_tags = ['h1', 'h2', 'p']
+        pattern = f"<({'|'.join(allowed_tags)})>(.*?)</\\1>"
+        match = re.search(pattern, input_string, re.DOTALL)
+        # Если есть совпадение, возвращаем текст внутри тега; иначе - пустая строка
+        return match.group(2).strip() if match else ""
 
     def add_paragraph(self, text):
         p = self.doc.add_paragraph()
@@ -116,33 +116,26 @@ class GOSTWordBaseDocument:
 class GOSTWordDocument(GOSTWordBaseDocument):
     def create_document(self):
         for index, item in enumerate(self.data):
-            for content in item['content']:
-                if content['type'] == 'text':
-                    parts = self.parse_html_content(content['text'])
-                    if index == len(self.data) - 1:
-                        references = [part.replace('<p>', '').replace(
-                            '</p>', '') for part in parts if '<p>' in part]
-                        self.add_references(references)
-                    else:
-                        for part in parts:
-                            if '<h1>' in part:
-                                self.add_heading(part.replace(
-                                    '<h1>', '').replace('</h1>', ''), level=1)
-                            elif '<h2>' in part:
-                                self.add_heading(part.replace(
-                                    '<h2>', '').replace('</h2>', ''), level=2)
-                            elif '<p>' in part:
-                                clean_text = part.replace(
-                                    '<p>', '').replace('</p>', '')
-                                self.add_paragraph(clean_text)
+            if type(item) == str:
+                tag_text = self.extract_text(item)
+                if '<h1>' in item:
+                    self.add_heading(tag_text, level=1)
+                elif '<h2>' in item:
+                    self.add_heading(tag_text, level=2)
+                continue
+            if type(item) == list:
+                for p in item:
+                    tag_text = self.extract_text(p)
+                    self.add_paragraph(tag_text)
+                continue
+            if index == len(self.data) - 1 and type(item) == list:
+                references = [self.extract_text(p) for p in item]
+                self.add_references(references)
+
 
         return self.doc
 
     def add_references(self, references):
-        # Добавление заголовка для списка литературы
-        self.add_heading("Список используемой литературы", level=1)
-
-        # Добавление нумерованного списка
         for ref in references:
             # Удаление существующей нумерации в начале строки
             clean_ref = re.sub(r'^\d+\.\s+', '', ref)
@@ -163,20 +156,18 @@ class GOSTWordDocument(GOSTWordBaseDocument):
 
 class GOSTWordEssayDocument(GOSTWordBaseDocument):
     def create_document(self):
-        for item in self.data:
-            for content in item['content']:
-                if content['type'] == 'text':
-                    parts = self.parse_html_content(content['text'])
-                    for part in parts:
-                        if '<h1>' in part:
-                            self.add_heading(part.replace(
-                                '<h1>', '').replace('</h1>', ''), level=1)
-                        elif '<h2>' in part:
-                            self.add_heading(part.replace(
-                                '<h2>', '').replace('</h2>', ''), level=2)
-                        elif '<p>' in part:
-                            clean_text = part.replace(
-                                '<p>', '').replace('</p>', '')
-                            self.add_paragraph(clean_text)
-
+        for index, item in enumerate(self.data):
+            print(item)
+            if type(item) == str:
+                tag_text = self.extract_text(item)
+                if '<h1>' in item:
+                    self.add_heading(tag_text, level=1)
+                elif '<h2>' in item:
+                    self.add_heading(tag_text, level=2)
+                continue
+            if type(item) == list:
+                for p in item:
+                    tag_text = self.extract_text(p)
+                    self.add_paragraph(tag_text)
+                continue
         return self.doc

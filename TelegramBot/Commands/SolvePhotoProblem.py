@@ -53,7 +53,7 @@ async def handlePhoto(message: types.Message, state: FSMContext):
         await message.answer_photo(
             caption=solution_text,
             photo=image_to_send,
-            parse_mode=ParseMode.MARKDOWN
+            parse_mode=ParseMode.HTML,
         )
     except Exception as e:
         print(e)

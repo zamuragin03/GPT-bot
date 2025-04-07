@@ -1,20 +1,23 @@
-import io
+from io import BytesIO
+
 import itertools
 import time
 from typing import Union
 from PIL import Image, ImageEnhance, ImageOps
 import re
+from aiogram.types import Message, CallbackQuery
+from aiogram.fsm.state import State
+from DataModels.AbstractDataModel import PlanResponse
+from aiogram.fsm.context import FSMContext
 from datetime import datetime, timedelta
 import random
 import aiofiles
 import docx
-from Service import LocalizationService, TelegramUserSubscriptionService
+from Service import LocalizationService
+from Service.TelegramUserSubscriptionService import TelegramUserSubscriptionService
 import base64
-from docx import Document
-from docx.oxml.ns import qn
 # ИМПОРТ ДЛЯ eval
 import numpy as np
-from docx.shared import Pt
 import matplotlib.pyplot as plt
 from aiogram.types import FSInputFile
 from Config import PATH_TO_TEMP_FILES, SUBSCRIPTION_LIMITATIONS, GROUP_LINK_URL, DAILY_LIMITATIONS, PATH_TO_DOWNLOADED_FILES, PATH_TO_TEMP_WATERMARK, client
@@ -34,9 +37,10 @@ class BotService:
     progress_cycle = itertools.cycle(progress_indicators)
 
     @staticmethod
-    async def encode_image(message:types.Message):
+    async def encode_image(message: types.Message):
         photo = message.photo[-1]
-        photo_folder = PATH_TO_DOWNLOADED_FILES.joinpath(str(message.from_user.id))
+        photo_folder = PATH_TO_DOWNLOADED_FILES.joinpath(
+            str(message.from_user.id))
         photo_folder.mkdir(parents=True, exist_ok=True)
         photo_path = photo_folder.joinpath(f'{photo.file_unique_id}.jpg')
         await message.bot.download(file=message.photo[-1].file_id, destination=photo_path)
@@ -58,50 +62,51 @@ class BotService:
         inverted_image.save(output_path, "JPEG")
 
     @staticmethod
-    def latex_to_image(latex_code, external_id):
-        # Генерация изображения на основе LaTeX
-        fig, ax = plt.subplots()
-        latex_code = str(latex_code).replace('\n', '')
-        latex_code_lines = latex_code.split(r'\\')
-        full_code = "\n".join(
-            [f"${line.strip()}$" for line in latex_code_lines])
+    def latex_to_image(latex_code, external_id, dpi=300):
+        result = ''
+        for el in latex_code:
+            result += '$' + el + '$' + '\n'
 
-        ax.text(
-            x=0.5, y=0.5,
-            s=full_code.replace('$$', '').replace(
-                '\end{align*}', '').replace('\begin{align*}', ''),
-            horizontalalignment="center",
-            verticalalignment="center",
-            fontsize=20, ha='center', va='center',
-        )
-        ax.axis('off')
-        plt.ioff()
-        fig.set_size_inches(8, 4)
+        fig, ax = plt.subplots(figsize=(4, 2))
+        ax.text(0.5, 0.5, result, fontsize=20, ha='center', va='center')
+        ax.set_axis_off()
 
-        # Сохраняем временное изображение
-        base_path = PATH_TO_TEMP_FILES.joinpath(
-            str(external_id)).joinpath('solution.jpg')
-        base_path.parent.mkdir(parents=True, exist_ok=True)
-        plt.savefig(base_path, bbox_inches='tight', pad_inches=0.5, dpi=300)
+        # Сохранение в буфер
+        buffer = BytesIO()
+        plt.savefig(buffer, format='png', dpi=dpi,
+                    bbox_inches='tight', pad_inches=0.1)
         plt.close(fig)
 
-        # Инвертируем изображение
-        inverted_path = PATH_TO_TEMP_FILES.joinpath(
-            str(external_id)).joinpath('solution_inverted.jpg')
-        BotService.invert_image(base_image_path=base_path,
-                                output_path=inverted_path)
+        # Открытие изображения с помощью PIL
+        buffer.seek(0)
+        image = Image.open(buffer)
 
-        # Путь к финальному изображению с водяным знаком
-        final_path = PATH_TO_TEMP_FILES.joinpath(
-            str(external_id)).joinpath('solution_with_watermark.jpg')
+        if image.mode == 'RGBA':
+            image = image.convert('RGB')
+        # Сохраняем временное изображение
+        base_path = PATH_TO_TEMP_FILES.joinpath(
+            str(external_id)).joinpath(f'solution{random.randint(100,1000)}.jpg')
+        base_path.parent.mkdir(parents=True, exist_ok=True)
+        image.save(base_path, format='JPEG')  # Сохраняем как JPEG
+        plt.close(fig)
 
-        # Путь к файлу водяного знака
+        # # Инвертируем изображение
+        # inverted_path = PATH_TO_TEMP_FILES.joinpath(
+        #     str(external_id)).joinpath('solution_inverted.jpg')
+        # BotService.invert_image(base_image_path=base_path,
+        #                         output_path=inverted_path)
 
-        # Наложение водяного знака
-        BotService.add_watermark(base_image_path=inverted_path,
-                                 watermark_path=PATH_TO_TEMP_WATERMARK, output_path=final_path)
+        # # Путь к финальному изображению с водяным знаком
+        # final_path = PATH_TO_TEMP_FILES.joinpath(
+        #     str(external_id)).joinpath('solution_with_watermark.jpg')
 
-        return FSInputFile(path=final_path, filename="solution_with_watermark.jpg")
+        # # Путь к файлу водяного знака
+
+        # # Наложение водяного знака
+        # BotService.add_watermark(base_image_path=inverted_path,
+        #                          watermark_path=PATH_TO_TEMP_WATERMARK, output_path=final_path)
+
+        return FSInputFile(path=base_path, filename="solution_with_watermark.jpg")
 
     def add_watermark(base_image_path, watermark_path, output_path):
         """
@@ -236,6 +241,7 @@ class BotService:
         first_name = user.first_name
 
         if subscription:
+
             limitation_object = TelegramUserSubscriptionService.GetUserLimitations(
                 user.id)
             limits = SUBSCRIPTION_LIMITATIONS
@@ -243,8 +249,7 @@ class BotService:
             limitation_object = TelegramUserSubscriptionService.GetUserDailyLimitations(
                 user.id)
             limits = DAILY_LIMITATIONS
-        
-        
+
         limitations_remaining = limitation_object.get('limitations')
 
         localized_text = LocalizationService.BotTexts.GetMyProfileText(
@@ -265,8 +270,6 @@ class BotService:
             max(0, limitations_remaining["abstract_writer"]),
             course_work_helper_remain=limits["course_work_helper"] -
             max(0, limitations_remaining["course_work_helper"]),
-            final_paper_helper_remain=limits["final_paper_helper"] -
-            max(0, limitations_remaining["final_paper_helper"]),
             essay_helper_remain=limits["essay_helper"] -
             max(0, limitations_remaining["essay_helper"]),
             photo_issue_helper_remain=limits["photo_issue_helper"] -
@@ -277,24 +280,23 @@ class BotService:
             max(0, limitations_remaining["power_point_helper"]),
             rewriting_helper_remain=limits["rewriting_helper"] -
             max(0, limitations_remaining["rewriting_helper"]),
-            anti_plagiarism_system_remain=limits['anti_plagiarism_system'] -
-            max(0, limitations_remaining['anti_plagiarism_system'])
+            antiplagiat_helper_remain=limits['antiplagiat_helper'] -
+            max(0, limitations_remaining['antiplagiat_helper'])
         )
 
     @staticmethod
-    def parse_work_plan(text):
-        # Создаем паттерны для заголовков первого и второго уровня
-        header1_pattern = re.compile(r"<h1>(.*?)<\/h1>")
-        header2_pattern = re.compile(r"<h2>(.*?)<\/h2>")
-
+    def parse_work_plan(plan_response: PlanResponse) -> str:
         result = []
 
-        text = header1_pattern.sub(lambda m: f"• <b>{m.group(1)}</b>", text)
-        text = header2_pattern.sub(lambda m: f"•• {m.group(1)}", text)
+        for heading in plan_response.headings:
+            text = heading.heading_text.strip()
 
-        lines = text.split("\n")
-        for line in lines:
-            result.append(line)
+            if text.startswith("<h1>") and text.endswith("</h1>"):
+                cleaned_text = re.sub(r"<h1>(.*?)</h1>", r"\1", text)
+                result.append(f"• <b>{cleaned_text}</b>")
+            elif text.startswith("<h2>") and text.endswith("</h2>"):
+                cleaned_text = re.sub(r"<h2>(.*?)</h2>", r"\1", text)
+                result.append(f"•• {cleaned_text}")
 
         return "\n".join(result)
 
@@ -521,18 +523,22 @@ class BotService:
         return file_content
 
     @staticmethod
-    async def run_process_with_countdown(message:types.Message, task, *args, **kwargs):
+    async def run_process_with_countdown(
+            message: types.Message = None,
+            phrases=["Анализирую запрос...",
+                     "Ищу информацию...", "Генерирую текст...", ],
+            task=None, *args, **kwargs
+            ):
         """
         Метод для отображения таймера, смены фраз и выполнения задачи с удалением сообщения по завершению.
-        
+
         :param message: Сообщение, куда отправлять прогресс
         :param task: Асинхронная задача, которую нужно выполнить
         :param total_time: Общее время выполнения в секундах
         :param args: Аргументы для задачи
         :param kwargs: Именованные аргументы для задачи
         """
-        
-        phrases = ["Анализирую запрос...", "Ищу информацию...", "Генерирую текст...", ]
+
         phrase_cycle = itertools.cycle(phrases)
         start_time = time.time()
 
@@ -547,7 +553,7 @@ class BotService:
         phrase_update_time = 0  # Для контроля смены фразы
 
         previous_message_content = f"<code>[00:00] {current_phrase}</code>"
-        
+
         task_coro = task(*args, **kwargs)
         task_result = asyncio.create_task(task_coro)
 
@@ -571,8 +577,172 @@ class BotService:
 
             # Ждем 1 секунду перед следующей итерацией
             await asyncio.sleep(1)
-            
+
         result = await task_result
 
         await progress_message.delete()
         return result
+
+    def __escape_text(text):
+        """
+        Экранирует символы &, <, >
+        """
+        return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+    def __process_code_block(segment):
+        """
+        Если сегмент – разрешённый блок кода (начинается с <pre> или <code>),
+        то оставляем сами теги, а содержимое между ними обрабатываем через escape_text.
+        Учитываем следующие варианты:
+        1. <pre><code class="…"> ... </code></pre>
+        2. <code class="…"> ... </code>
+        3. <pre …> ... </pre>
+        4. <code> ... </code>
+        Если ничего не подошло, возвращаем сегмент без изменений.
+        """
+        patterns = [
+            # 1. Обрабатываем конструкцию <pre><code …>...</code></pre>
+            (r'^(<pre><code[^>]*>)(.*?)(</code></pre>)$', re.DOTALL),
+            # 2. Блок <code class="…">...</code>
+            (r'^(<code class="[^">]*">)(.*?)(</code>)$', re.DOTALL),
+            # 3. Блок <pre …>...</pre>
+            (r'^(<pre[^>]*>)(.*?)(</pre>)$', re.DOTALL),
+            # 4. Блок <code>...</code>
+            (r'^(<code>)(.*?)(</code>)$', re.DOTALL)
+        ]
+        for pattern, flags in patterns:
+            m = re.match(pattern, segment, flags)
+            if m:
+                opening, inner, closing = m.groups()
+                # Экранируем содержимое внутри кода
+                return opening + BotService.__escape_text(inner) + closing
+        return segment
+
+    def escape_html(input_text):
+        """
+        Метод экранирования:
+        – Все символы &, <, > заменяются на сущности, если они находятся вне разрешённых блоков.
+        – Разрешённые блоки (совпадающие по одному из шаблонов ниже) остаются целиком,
+            за исключением блоков кода (<pre>, <code>), в которых заменяем спецсимволы только внутри контента.
+
+        Разрешённые шаблоны (эти фрагменты не должны изменяться, за исключением обработки кода):
+        1. <pre><code class=".*?">.*?</code></pre>
+        2. <code class=".*?">.*?</code>
+        3. <pre.*?>.*?</pre>
+        4. <code>.*?</code>
+        5. <b>.*?</b>
+        6. <i>.*?</i>
+        7. <u>.*?</u>
+        8. <s>.*?</s>
+        9. <span class="tg-spoiler">.*?</span>
+        10. <a href=".*?">.*?</a>
+        """
+        # Список разрешённых шаблонов – порядок имеет значение, более "специфичные" (блоки кода) ставим первыми.
+        allowed_patterns = [
+            r'<pre><code class=".*?">.*?</code></pre>',
+            r'<code class=".*?">.*?</code>',
+            r'<pre.*?>.*?</pre>',
+            r'<code>.*?</code>',
+            r'<b>.*?</b>',
+            r'<i>.*?</i>',
+            r'<u>.*?</u>',
+            r'<s>.*?</s>',
+            r'<span class="tg-spoiler">.*?</span>',
+            r'<a href=".*?">.*?</a>'
+        ]
+        # Объединяем их в одно регулярное выражение через ОR.
+        combined_pattern = "(" + "|".join(allowed_patterns) + ")"
+        allowed_regex = re.compile(combined_pattern, flags=re.DOTALL)
+
+        result_segments = []
+        last_index = 0
+
+        # Ищем все вхождения разрешённых блоков
+        for match in allowed_regex.finditer(input_text):
+            start, end = match.span()
+            # Текст между разрешёнными блоками — экранируем полностью.
+            non_allowed = input_text[last_index:start]
+            result_segments.append(BotService.__escape_text(non_allowed))
+
+            allowed_segment = match.group(0)
+            # Если блок начинается с <pre или <code>, то считаем его кодом,
+            # обрабатываем содержимое с escape_text (но оставляем сами теги)
+            seg_strip = allowed_segment.lstrip()
+            if seg_strip.startswith("<pre") or seg_strip.startswith("<code"):
+                result_segments.append(
+                    BotService.__process_code_block(allowed_segment))
+            else:
+                # Остальные разрешённые блоки оставляем нетронутыми.
+                result_segments.append(allowed_segment)
+            last_index = end
+
+        # Экранируем остаток текста после последнего совпадения.
+        result_segments.append(
+            BotService.__escape_text(input_text[last_index:]))
+
+        return "".join(result_segments)
+
+    @staticmethod
+    async def go_menu(bot: Bot, event: Union[Message, CallbackQuery], state: FSMContext, final_state: State):
+        from Keyboards import Keyboard
+
+        if isinstance(event, CallbackQuery):
+            message = event.message
+            user_id = event.from_user.id
+        else:
+            message = event
+            user_id = message.from_user.id
+
+        try:
+            await bot.unpin_all_chat_messages(chat_id=message.chat.id)
+        except Exception:
+            pass
+
+        # Достаём язык и клавиатуру
+        data = await state.get_data()
+        language = data.get('language', 'ru')
+
+        text = LocalizationService.BotTexts.GetInstrumentsText(language)
+        markup = Keyboard.Get_Instruments(user_id, language)
+
+        try:
+            if message.text:
+                await message.edit_text(text=text, reply_markup=markup)
+            else:
+                raise ValueError("Cannot edit non-text message")
+        except Exception:
+            try:
+                await message.delete()
+            except Exception:
+                ...
+            await bot.send_message(chat_id=message.chat.id, text=text, reply_markup=markup)
+
+        # Устанавливаем новое состояние
+        await state.set_state(final_state)
+
+    @staticmethod
+    def GetSubscriptionPrice(selected_language, subscription):
+        subscription_text = LocalizationService.BotTexts.SubscriptionText(
+            selected_language)
+        return subscription_text.format(price=subscription.get('price'))
+
+    @staticmethod
+    async def download_file(bot: Bot, message: types.Message):
+        document = message.document
+
+        file = await bot.get_file(document.file_id)
+
+        photo_folder = PATH_TO_DOWNLOADED_FILES.joinpath(
+            str(message.from_user.id))
+        photo_folder.mkdir(parents=True, exist_ok=True)
+
+        # Get the file name from the document object
+        original_file_name = document.file_name
+        file_extension = original_file_name.split(
+            '.')[-1] if '.' in original_file_name else ''
+
+        file_path = photo_folder.joinpath(
+            f'{file.file_unique_id}.{file_extension}')
+        await bot.download(file=document.file_id, destination=file_path)
+
+        return file_path

@@ -4,11 +4,10 @@ from Config import (CODE_HELPER_SYSTEM_PROMPT,
                     )
 from .UserActionService import UserActionService
 from .LocalizationService import LocalizationService
+from .BotService import BotService
 from openai.types import Completion
 from openai import AsyncStream
 from aiogram.types import Message
-import asyncio
-
 
 
 class CodeHelperGPTService:
@@ -18,6 +17,7 @@ class CodeHelperGPTService:
         self.model = AI_MODELS.GPT_4_O_MINI_2024_07_18
         self.reasoning_effort = REASONING_EFFORT.MEDIUM
         self.auto_save = True
+        self.CONTEXT_LIMIT = 200_000
         self.language = language
         self.action_type_name = 'code_helper'
         self.messages = [
@@ -100,37 +100,6 @@ class CodeHelperGPTService:
             }
         )
 
-    def escape_html(self, input_text):
-        # Определяем шаблон для поиска разрешенных тегов
-        import re
-        allowed_tags = [
-            r'<b>.*?</b>',
-            r'<i>.*?</i>',
-            r'<u>.*?</u>',
-            r'<s>.*?</s>',
-            r'<span class="tg-spoiler">.*?</span>',
-            r'<a href=".*?">.*?</a>',
-            r'<code>.*?</code>',
-            r'<pre.*?>.*?</pre>',  # Обновлен шаблон чтобы поддерживать pre с языком
-            r'<code class="language-\w+">.*?</code>'
-        ]
-
-        # Создаем общий компилированный регулярных выражений для всех разрешенных тегов
-        allowed_pattern = '|'.join(allowed_tags)
-
-        def replace_function(text):
-            # Экранирование неразрешённого контента
-            # Escape & except like &amp;
-            text = re.sub(r'&(?![#\w]+;)', '&amp;', text)
-            text = text.replace('<', '&lt;').replace('>', '&gt;')
-            return text
-
-        parts = re.split(f'({allowed_pattern})', input_text, flags=re.DOTALL)
-        escaped_result = [part if re.fullmatch(
-            allowed_pattern, part, flags=re.DOTALL) else replace_function(part) for part in parts]
-
-        return ''.join(escaped_result).replace('<br>', '').replace('<br/>', '')
-
     def add_file_message(self, code_text, caption):
         if caption:
             self.add_message(f'{caption}: {code_text}')
@@ -138,7 +107,7 @@ class CodeHelperGPTService:
             self.add_message(f'Вот мой код: {code_text}')
 
     def check_if_context_limit_reached(self,):
-        if self.total_tokens_used > 45000:
+        if self.total_tokens_used > self.CONTEXT_LIMIT:
             return True
 
     async def generate_response(self):
@@ -165,16 +134,18 @@ class CodeHelperGPTService:
         if not self.auto_save:
             self.clear_context()
         self.add_action(response)
-        result_text = LocalizationService.BotTexts.GetPrefixByName(self.action_type_name,self.language )
-        result_text += self.escape_html(response.choices[0].message.content)
-        return result_text
+        postfix_text = LocalizationService.BotTexts.GetPrefixByName(
+            self.action_type_name, self.language)
+        result_text = BotService.escape_html(
+            response.choices[0].message.content)
+        return result_text+postfix_text
 
     async def send_streaming_message(self, start_message: Message):
         stream: AsyncStream = None
         accumulated_text = ""  # Будем накапливать текст по частям
         filtered_messages = list(filter(
             lambda x: not any(item.get('type') == 'image_url' or item.get('file') == 'file'
-                            for item in x.get('content', [])),
+                              for item in x.get('content', [])),
             self.messages
         ))
 
@@ -203,4 +174,3 @@ class CodeHelperGPTService:
         self.add_ai_message(accumulated_text)
         if not self.auto_save:
             self.clear_context()
-
