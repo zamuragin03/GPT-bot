@@ -192,7 +192,7 @@ async def get_pdf_document(message: types.Message, state: FSMContext):
 )
 async def get_excel_document(message: types.Message, state: FSMContext):
     data = await state.get_data()
-    file_content = await BotService.GetXLSXFileContent(bot, message)
+    file_content = await BotService.GetExcelFileContentJSON(bot, message)
     user = TelegramUserService.GetTelegramUserByExternalId(
         message.from_user.id)
 

@@ -1,11 +1,9 @@
 from io import BytesIO
 from PyPDF2 import PdfReader
-import itertools
-import time
+import time, json, itertools, xlrd, re
 from typing import Union
 from openpyxl import load_workbook
 from PIL import Image, ImageEnhance, ImageOps
-import re
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.state import State
 from DataModels.AbstractDataModel import PlanResponse
@@ -542,26 +540,55 @@ class BotService:
         return content
 
 
+
     @staticmethod
-    async def GetXLSXFileContent(bot: Bot, message: types.Message):
+    async def GetExcelFileContentJSON(bot: Bot, message: types.Message):
         document = message.document
         file = await bot.get_file(document.file_id)
-        file_folder = PATH_TO_DOWNLOADED_FILES.joinpath(
-            str(message.from_user.id))
+        
+        # Создание папки для сохранения файлов
+        file_folder = PATH_TO_DOWNLOADED_FILES.joinpath(str(message.from_user.id))
         file_folder.mkdir(parents=True, exist_ok=True)
-        file_path = file_folder.joinpath(f'{file.file_unique_id}.xlsx')
+        file_path = file_folder.joinpath(f'{file.file_unique_id}.{document.file_name.split(".")[-1]}')
         await bot.download(file=document.file_id, destination=file_path)
 
-        # Чтение содержимого XLSX файла
-        workbook = load_workbook(file_path)
-        content = ""
-        for sheet in workbook.sheetnames:
-            worksheet = workbook[sheet]
-            content += f"Sheet: {sheet}\n"
-            for row in worksheet.iter_rows(values_only=True):
-                content += "\t".join([str(cell) if cell is not None else "" for cell in row]) + "\n"
+        # Подготовка структуры данных для JSON
+        data = {"sheets": []}
 
-        return content
+        # Проверяем тип файла и обрабатываем соответственно
+        if file_path.suffix == '.xlsx':
+            # Работа с .xlsx файлом через openpyxl
+            workbook = load_workbook(file_path)
+            for sheet_name in workbook.sheetnames:
+                worksheet = workbook[sheet_name]
+                sheet_data = {
+                    "name": sheet_name,
+                    "rows": [
+                        [str(cell) if cell is not None else "" for cell in row]  # Приведение всех данных к строковому типу
+                        for row in worksheet.iter_rows(values_only=True)
+                    ]
+                }
+                data["sheets"].append(sheet_data)
+        elif file_path.suffix == '.xls':
+            # Работа с .xls файлом через xlrd
+            workbook = xlrd.open_workbook(file_path)
+            for sheet_index in range(workbook.nsheets):
+                sheet = workbook.sheet_by_index(sheet_index)
+                sheet_data = {
+                    "name": sheet.name,
+                    "rows": [
+                        [str(cell) if cell is not None else "" for cell in sheet.row_values(row_index)]  # Приведение всех данных к строковому типу
+                        for row_index in range(sheet.nrows)
+                    ]
+                }
+                data["sheets"].append(sheet_data)
+        else:
+            return json.dumps({"error": "Unsupported file format. Only .xls and .xlsx are allowed."}, ensure_ascii=False)
+
+        # Возвращаем данные в формате JSON с сохранением русских символов
+        return json.dumps(data, ensure_ascii=False, indent=4)
+
+
 
 
 
