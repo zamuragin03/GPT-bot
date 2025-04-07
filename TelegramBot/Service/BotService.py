@@ -1,8 +1,9 @@
 from io import BytesIO
-
+from PyPDF2 import PdfReader
 import itertools
 import time
 from typing import Union
+from openpyxl import load_workbook
 from PIL import Image, ImageEnhance, ImageOps
 import re
 from aiogram.types import Message, CallbackQuery
@@ -327,20 +328,6 @@ class BotService:
         return FSInputFile(path=end_path, filename="result.txt")
 
     @staticmethod
-    async def GetWordFileContent(bot: Bot, message: types.Message):
-        document = message.document
-        file = await bot.get_file(document.file_id)
-        file_folder = PATH_TO_DOWNLOADED_FILES.joinpath(
-            str(message.from_user.id))
-        file_folder.mkdir(parents=True, exist_ok=True)
-        file_path = file_folder.joinpath(f'{file.file_unique_id}.docx')
-        await bot.download(file=document.file_id, destination=file_path)
-        doc = docx.Document(file_path)
-        content = '\n'.join([paragraph.text for paragraph in doc.paragraphs])
-
-        return content
-
-    @staticmethod
     async def WriteFileToDOCX(content, external_id):
         end_path = PATH_TO_TEMP_FILES.joinpath(
             str(external_id)).joinpath(f'result{random.randint(1,10000)}.docx')
@@ -521,6 +508,62 @@ class BotService:
         async with aiofiles.open(file_path, 'rb') as f:
             file_content = await f.read()
         return file_content
+
+    @staticmethod
+    async def GetWordFileContent(bot: Bot, message: types.Message):
+        document = message.document
+        file = await bot.get_file(document.file_id)
+        file_folder = PATH_TO_DOWNLOADED_FILES.joinpath(
+            str(message.from_user.id))
+        file_folder.mkdir(parents=True, exist_ok=True)
+        file_path = file_folder.joinpath(f'{file.file_unique_id}.docx')
+        await bot.download(file=document.file_id, destination=file_path)
+        doc = docx.Document(file_path)
+        content = '\n'.join([paragraph.text for paragraph in doc.paragraphs])
+
+        return content
+
+    @staticmethod
+    async def GetPDFFileContent(bot: Bot, message: types.Message):
+        document = message.document
+        file = await bot.get_file(document.file_id)
+        file_folder = PATH_TO_DOWNLOADED_FILES.joinpath(
+            str(message.from_user.id))
+        file_folder.mkdir(parents=True, exist_ok=True)
+        file_path = file_folder.joinpath(f'{file.file_unique_id}.pdf')
+        await bot.download(file=document.file_id, destination=file_path)
+
+        # Чтение содержимого PDF файла
+        reader = PdfReader(file_path)
+        content = ""
+        for page in reader.pages:
+            content += page.extract_text() + "\n"
+
+        return content
+
+
+    @staticmethod
+    async def GetXLSXFileContent(bot: Bot, message: types.Message):
+        document = message.document
+        file = await bot.get_file(document.file_id)
+        file_folder = PATH_TO_DOWNLOADED_FILES.joinpath(
+            str(message.from_user.id))
+        file_folder.mkdir(parents=True, exist_ok=True)
+        file_path = file_folder.joinpath(f'{file.file_unique_id}.xlsx')
+        await bot.download(file=document.file_id, destination=file_path)
+
+        # Чтение содержимого XLSX файла
+        workbook = load_workbook(file_path)
+        content = ""
+        for sheet in workbook.sheetnames:
+            worksheet = workbook[sheet]
+            content += f"Sheet: {sheet}\n"
+            for row in worksheet.iter_rows(values_only=True):
+                content += "\t".join([str(cell) if cell is not None else "" for cell in row]) + "\n"
+
+        return content
+
+
 
     @staticmethod
     async def run_process_with_countdown(

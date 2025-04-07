@@ -66,8 +66,8 @@ async def get_photo(message: types.Message, state: FSMContext):
         )
         return
     base64_img = await BotService.encode_image(message)
-    caption = message.caption or ""
-    default_mode_helper.add_message_with_attachement(base64_img, caption)
+    default_mode_helper.add_message_with_attachement(
+        base64_img, caption=message.caption if message.caption else 'Пользовательское изображение')
     result = await BotService.run_process_with_countdown(
         message=message,
         task=default_mode_helper.generate_response  # Задача
@@ -114,11 +114,108 @@ async def get_easy_document(message: types.Message, state: FSMContext):
         task=default_mode_helper.generate_response  # Задача
     )
     await BotService.send_long_message(
-            message,
-            result,
-            disable_web_page_preview=True,
-            parse_mode=ParseMode.HTML,
-        )
+        message,
+        result,
+        disable_web_page_preview=True,
+        parse_mode=ParseMode.HTML,
+    )
+
+
+@gpt_free_router.message(
+    F.document,
+    CustomFilters.gptTypeFilter('default_mode'),
+    DocumentTypeFilter(document_types=['doc', 'docx'])
+)
+async def get_docx_document(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    file_content = await BotService.GetWordFileContent(bot, message)
+    user = TelegramUserService.GetTelegramUserByExternalId(
+        message.from_user.id)
+
+    default_mode_helper = data.get('default_mode_helper')
+
+    if not default_mode_helper:
+        default_mode_helper = DefaultModeGPTService(
+            external_id=message.from_user.id, language=user.get('language', 'ru'))
+        await state.update_data(default_mode_helper=default_mode_helper)
+    default_mode_helper.add_file_message(
+        file_content=file_content,
+        caption=message.caption if message.caption else 'Вот содержание моего файла'
+    )
+    result = await BotService.run_process_with_countdown(
+        message=message,
+        task=default_mode_helper.generate_response  # Задача
+    )
+    await BotService.send_long_message(
+        message,
+        result,
+        disable_web_page_preview=True,
+        parse_mode=ParseMode.HTML,
+    )
+
+@gpt_free_router.message(
+    F.document,
+    CustomFilters.gptTypeFilter('default_mode'),
+    DocumentTypeFilter(document_types=['pdf'])
+)
+async def get_pdf_document(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    file_content = await BotService.GetPDFFileContent(bot, message)
+    user = TelegramUserService.GetTelegramUserByExternalId(
+        message.from_user.id)
+
+    default_mode_helper = data.get('default_mode_helper')
+
+    if not default_mode_helper:
+        default_mode_helper = DefaultModeGPTService(
+            external_id=message.from_user.id, language=user.get('language', 'ru'))
+        await state.update_data(default_mode_helper=default_mode_helper)
+    default_mode_helper.add_file_message(
+        file_content=file_content,
+        caption=message.caption if message.caption else 'Вот содержание моего файла'
+    )
+    result = await BotService.run_process_with_countdown(
+        message=message,
+        task=default_mode_helper.generate_response  # Задача
+    )
+    await BotService.send_long_message(
+        message,
+        result,
+        disable_web_page_preview=True,
+        parse_mode=ParseMode.HTML,
+    )
+
+@gpt_free_router.message(
+    F.document,
+    CustomFilters.gptTypeFilter('default_mode'),
+    DocumentTypeFilter(document_types=['xls', 'xlsx'])
+)
+async def get_excel_document(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    file_content = await BotService.GetXLSXFileContent(bot, message)
+    user = TelegramUserService.GetTelegramUserByExternalId(
+        message.from_user.id)
+
+    default_mode_helper = data.get('default_mode_helper')
+
+    if not default_mode_helper:
+        default_mode_helper = DefaultModeGPTService(
+            external_id=message.from_user.id, language=user.get('language', 'ru'))
+        await state.update_data(default_mode_helper=default_mode_helper)
+    default_mode_helper.add_file_message(
+        file_content=file_content,
+        caption=message.caption if message.caption else 'Вот содержание моего файла'
+    )
+    result = await BotService.run_process_with_countdown(
+        message=message,
+        task=default_mode_helper.generate_response  # Задача
+    )
+    await BotService.send_long_message(
+        message,
+        result,
+        disable_web_page_preview=True,
+        parse_mode=ParseMode.HTML,
+    )
 
 
 @gpt_free_router.message(

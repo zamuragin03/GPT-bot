@@ -66,7 +66,7 @@ class DefaultModeGPTService:
         ]
         self.total_tokens_used = 0
 
-    def add_message_with_attachement(self, base64_image, caption):
+    def add_message_with_attachement(self, base64_image='', caption=''):
         self.messages.append(
             {
                 "role": "user",
