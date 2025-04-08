@@ -1,19 +1,21 @@
 from openai.types import Completion
 from Config import (client,
-                    DEFAULT_MODE_SYSTEM_PROMPT,
+                    DEFAULT_MODE_SYSTEM_PROMPT, NEW_DEFAULT_MODE_SYSTEM_PROMPT,
+
                     AI_MODELS, REASONING_EFFORT
                     )
 from .LocalizationService import LocalizationService
 from .BotService import BotService
 from .UserActionService import UserActionService
 import re
+import tiktoken
 
 
 class DefaultModeGPTService:
     def __init__(self, external_id, language):
         self.total_tokens_used = 0
         self.user_external_id = external_id
-        self.model = AI_MODELS.GPT_4_O
+        self.model = AI_MODELS.GPT_4_O_MINI
         self.reasoning_effort = REASONING_EFFORT.MEDIUM
         self.auto_save = True
         self.CONTEXT_LIMIT = 200_000
@@ -22,7 +24,7 @@ class DefaultModeGPTService:
         self.messages = [
             {
                 "role": "system",
-                "content": DEFAULT_MODE_SYSTEM_PROMPT
+                "content": NEW_DEFAULT_MODE_SYSTEM_PROMPT
             },
         ]
 
@@ -78,7 +80,7 @@ class DefaultModeGPTService:
                     {
                             "type": "image_url",
                             "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}
-                        }
+                    }
                 ]
             }
         )
@@ -93,6 +95,7 @@ class DefaultModeGPTService:
 
     def add_action(self, response: Completion):
         self.total_tokens_used += response.usage.total_tokens
+        
         last_message = list(filter(lambda x: x.get(
             'role') == 'user', self.messages))[-1].get('content')
         if isinstance(last_message, list):
@@ -107,18 +110,22 @@ class DefaultModeGPTService:
         )
 
     async def generate_response(self):
-        # Ensure messages comply with OpenAI's structure
         payload = {
             "model": self.model.value,
-            "messages": self.messages,  # Make sure all 'content' fields are strings
+            "messages": self.messages,  #
             "response_format": {
-                "type": "text"
+                "type": "text",
             },
-            "temperature": 1,
-            "max_completion_tokens": 4096,
-            "top_p": 1,
-            "frequency_penalty": 0,
-            "presence_penalty": 0,
+            "temperature": 0.2,           # Оптимальный баланс креативности/точности
+            "max_completion_tokens": 2048,  # Резерв для системных токенов
+            "top_p": 0.95,                 # Широкая выборка с фильтрацией
+            "frequency_penalty": 0,      # Борьба с повторами
+            "presence_penalty": 0,       # Поощрение новых идей
+            "logit_bias": {6762: 100,  # Для токена "▎"
+                           236: 100,   # Для дополнительного токена "▎"
+                           27: 50,     # Для первой части токена "<pre>"
+                           2235: 50,   # Для второй части токена "<pre>"
+                           29: 50},
             "store": False
         }
 
@@ -138,11 +145,12 @@ class DefaultModeGPTService:
             postfix_text = LocalizationService.BotTexts.GetPrefixByName(
                 self.action_type_name, self.language
             )
+
             result_text = BotService.escape_html(
-                response.choices[0].message.content
+                BotService.sanitize_response(
+                    response.choices[0].message.content)
             )
             return result_text+postfix_text
 
         except Exception as e:
-            print(f"Error: {e}")
-            raise
+            return "Unresolved error. Please try again later. Error log: " + str(e)

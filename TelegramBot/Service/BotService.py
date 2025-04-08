@@ -9,9 +9,7 @@ from aiogram.fsm.state import State
 from DataModels.AbstractDataModel import PlanResponse
 from aiogram.fsm.context import FSMContext
 from datetime import datetime, timedelta
-import random
-import aiofiles
-import docx
+import random,tiktoken, docx, aiofiles
 from Service import LocalizationService
 from Service.TelegramUserSubscriptionService import TelegramUserSubscriptionService
 import base64
@@ -588,10 +586,6 @@ class BotService:
         # Возвращаем данные в формате JSON с сохранением русских символов
         return json.dumps(data, ensure_ascii=False, indent=4)
 
-
-
-
-
     @staticmethod
     async def run_process_with_countdown(
             message: types.Message = None,
@@ -751,6 +745,46 @@ class BotService:
             BotService.__escape_text(input_text[last_index:]))
 
         return "".join(result_segments)
+
+    @staticmethod
+    def sanitize_response(text: str) -> str:
+        # Удаляем формулы LaTeX
+        text = re.sub(r"\$\$.*?\$\$", "", text, flags=re.DOTALL)
+        text = re.sub(r"\\\(.*?\\\)", "", text, flags=re.DOTALL)
+        text = re.sub(r"\\\[.*?\\\]", "", text, flags=re.DOTALL)
+        
+        # Удаляем конструкции вида \frac{...}{...} и другие LaTeX-команды с аргументами
+        text = re.sub(r"\\[a-zA-Z]+\{.*?\}", "", text)  # Удаляет \frac{...}, \text{...}, и т.п.
+        text = re.sub(r"\\[a-zA-Z]+\{.*?\}\{.*?\}", "", text)  # Удаляет \frac{...}{...}
+
+        # Markdown очистка
+        text = re.sub(r"`{1,3}(.*?)`{1,3}", r"\1", text, flags=re.DOTALL)
+        text = re.sub(r"[*_]{1,3}(.*?)\1", r"\1", text, flags=re.DOTALL)
+
+        # Удаляем "ботовые" фразы
+        text = re.sub(r"(Привет!|Здравствуйте!|Я рад помочь|Я бот|Вот решение|Как я понял)[^\n]*", "", text, flags=re.IGNORECASE)
+
+        # Урезаем длинные списки вида "(x) = 1, ..." (5+ значений)
+        text = re.sub(r'(\([^\n]+?\)\s*=\s*[^\n]+?,\s*){5,}', '… и т.д. ', text)
+
+        return text.strip()
+
+
+    def estimate_tokens(messages, model="gpt-4-1106-preview"):
+        encoding = tiktoken.encoding_for_model(model)
+        tokens_per_message = 3
+        tokens = 0
+        for message in messages:
+            tokens += tokens_per_message
+            for key, value in message.items():
+                if isinstance(value, str):
+                    tokens += len(encoding.encode(value))
+                elif isinstance(value, list):  # вложенные сообщения, например с изображениями
+                    for item in value:
+                        for v in item.values():
+                            tokens += len(encoding.encode(str(v)))
+        tokens += 3  # прим. завершение
+        return tokens
 
     @staticmethod
     async def go_menu(bot: Bot, event: Union[Message, CallbackQuery], state: FSMContext, final_state: State):
