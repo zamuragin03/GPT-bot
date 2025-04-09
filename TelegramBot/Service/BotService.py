@@ -747,43 +747,154 @@ class BotService:
 
         return "".join(result_segments)
 
-    @staticmethod
+    def replace_superscripts(text):
+        # Заменим ^0…^9 на соответствующие надстрочные символы
+        superscript_map = {
+            '0': '⁰', '1': '¹', '2': '²', '3': '³',
+            '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷',
+            '8': '⁸', '9': '⁹'
+        }
+        return re.sub(r"\^(\d+)", lambda m: ''.join(superscript_map.get(ch, ch) for ch in m.group(1)), text)
+
+    def replace_frac(text):
+        pattern = r"\\frac\{"
+        while "\\frac{" in text:
+            start = text.find("\\frac{")
+            brace_level = 0
+            i = start + 6  # после \frac{
+
+            # найти конец первой части (числителя)
+            while i < len(text):
+                if text[i] == '{':
+                    brace_level += 1
+                elif text[i] == '}':
+                    if brace_level == 0:
+                        break
+                    brace_level -= 1
+                i += 1
+            numerator = text[start + 6:i]
+            i += 2  # пропустить '}{'
+            j = i
+            brace_level = 0
+
+            # найти конец второй части (знаменателя)
+            while j < len(text):
+                if text[j] == '{':
+                    brace_level += 1
+                elif text[j] == '}':
+                    if brace_level == 0:
+                        break
+                    brace_level -= 1
+                j += 1
+            denominator = text[i:j]
+            full = text[start:j+1]
+            replacement = f"({numerator}/{denominator})"
+            text = text.replace(full, replacement)
+        return text
+
+
+
     def sanitize_response(text: str) -> str:
-        # Удаляем формулы LaTeX
-        text = re.sub(r"\$\$.*?\$\$", "", text, flags=re.DOTALL)
-        text = re.sub(r"\\\(.*?\\\)", "", text, flags=re.DOTALL)
-        text = re.sub(r"\\\[.*?\\\]", "", text, flags=re.DOTALL)
-        text = re.sub(r"\\[a-zA-Z]+\{.*?\}\{.*?\}", "", text)  # Удаляем \frac{...}{...}
-        text = re.sub(r"\\[a-zA-Z]+\{.*?\}", "", text)  # Удаляем \text{...}, \sqrt{...} и т.п.
+        text = BotService.replace_frac(text)
+        text = BotService.replace_superscripts(text)
+        # ---------- ШАГ 0: Удаляем LaTeX-разметку ----------
+        # Удаляем \( \) и \[ \]
+        text = re.sub(r"\\\(|\\\)", "", text)
+        text = re.sub(r"\\\[|\\\]", "", text)
 
-        # Удаляем markdown-ссылки и упоминания
-        text = re.sub(r"!\[[^\]]*\]\([^)]+\)", "", text)  # Удаляет изображения ![alt](url)
-        text = re.sub(r"\[[^\]]+\]\([^)]+\)", "", text)   # Удаляет [текст](ссылка)
+        # ---------- ШАГ 1: Замены формул ----------
+        # \frac{a}{b} → (a/b)
+        text = re.sub(r"\\frac\{([^{}]+)\}\{([^{}]+)\}", r"(\1/\2)", text)
 
-        # Удаляем спойлеры и двойные подчёркивания/тильды
-        text = re.sub(r"\|\|.*?\|\|", "", text)  # ||spoiler||
-        text = re.sub(r"__([^_]+)__", r"\1", text)  # __underline__
-        text = re.sub(r"~~(.*?)~~", r"\1", text)  # ~~strikethrough~~
+        # \sqrt{a} → √(a)
+        text = re.sub(r"\\sqrt\{([^{}]+)\}", r"√(\1)", text)
 
-        # Удаляем markdown заголовки ##, ### и т.п.
+        # \sqrt[n]{a} → ⁿ√(a)
+        text = re.sub(r"\\sqrt\[(\d+)\]\{([^{}]+)\}", lambda m: f"{m.group(1)}√({m.group(2)})", text)
+
+        # Степени: x^{2} → x^2
+        text = re.sub(r"\^\{([^{}]+)\}", r"^\1", text)
+
+        # Индексы: x_{i} → x_i
+        text = re.sub(r"_\{([^{}]+)\}", r"_\1", text)
+
+        # \cdot → ·, \times → ×, \div → ÷
+        text = text.replace(r"\cdot", "·")
+        text = text.replace(r"\times", "×")
+        text = text.replace(r"\div", "÷")
+
+        # Знаки неравенств и логики
+        text = text.replace(r"\le", "≤")
+        text = text.replace(r"\ge", "≥")
+        text = text.replace(r"\neq", "≠")
+        text = text.replace(r"\approx", "≈")
+        text = text.replace(r"\infty", "∞")
+        text = text.replace(r"\to", "→")
+        text = text.replace(r"\rightarrow", "→")
+        text = text.replace(r"\leftarrow", "←")
+        text = text.replace(r"\Rightarrow", "⇒")
+        text = text.replace(r"\Leftarrow", "⇐")
+
+        # ±, ∓
+        text = text.replace(r"\pm", "±")
+        text = text.replace(r"\mp", "∓")
+
+        # Тригонометрия и логарифмы
+        text = re.sub(r"\\(sin|cos|tan|cot|sec|csc|log|ln|exp|arcsin|arccos|arctan)", r"\1", text)
+
+        # \text{...} → просто текст
+        text = re.sub(r"\\text\{([^{}]*)\}", r"\1", text)
+
+        # Суммы и пределы (убираем как символ, выражения сами по себе не нужны)
+        text = text.replace(r"\sum", "∑")
+        text = text.replace(r"\lim", "lim")
+        text = text.replace(r"\int", "∫")
+
+        # Скобки
+        text = text.replace(r"\left(", "(").replace(r"\right)", ")")
+        text = text.replace(r"\left[", "[").replace(r"\right]", "]")
+        text = text.replace(r"\left\{", "{").replace(r"\right\}", "}")
+
+
+        # \pm → ±, \cdot → ·
+        text = text.replace(r"\pm", "±")
+        text = text.replace(r"\cdot", "·")
+        text = text.replace(r"\le", "≤")
+        text = text.replace(r"\ge", "≥")
+        text = text.replace(r"\neq", "≠")
+        text = text.replace(r"\approx", "≈")
+
+        # \text{...} → содержимое
+        text = re.sub(r"\\text\{([^{}]*)\}", r"\1", text)
+
+        # Тригонометрические функции \sin → sin, и т.п.
+        text = re.sub(r"\\(tan|sec|cos|sin|cot|csc|log|ln|exp|arctan|arcsin|arccos)", r"\1", text)
+
+        # Убираем ^{...} → ^... (если без вложенности)
+        text = re.sub(r"\^\{([^{}]+)\}", r"^\1", text)
+
+        # ---------- ШАГ 2: Удаление markdown и прочего ----------
+        text = re.sub(r"!\[[^\]]*\]\([^)]+\)", "", text)
+        text = re.sub(r"\[[^\]]+\]\([^)]+\)", "", text)
+        text = re.sub(r"\|\|.*?\|\|", "", text)
+        text = re.sub(r"__([^_]+)__", r"\1", text)
+        text = re.sub(r"~~(.*?)~~", r"\1", text)
         text = re.sub(r"^#+\s*", "", text, flags=re.MULTILINE)
-
-        # Удаляем кавычки > и > blockquote
         text = re.sub(r"^>+\s?", "", text, flags=re.MULTILINE)
 
-        # Очищаем pre/code блоки
-        text = re.sub(r"```[\s\S]*?```", "", text)  # многострочный блок
-        text = re.sub(r"`([^`]*)`", r"\1", text)  # `inline code`
+        # Блоки кода
+        text = re.sub(r"```[\s\S]*?```", "", text)
+        text = re.sub(r"`([^`]*)`", r"\1", text)
 
-        # Markdown bold/italic, НО сохраняем одиночные '*'
-        text = re.sub(r"\*\*(.*?)\*\*", r"\1", text)  # **bold**
-        text = re.sub(r"(?<!\*)\*(?!\*)([^*]+)(?<!\*)\*(?!\*)", r"\1", text)  # *italic* (не затрагивает одиночные *)
-        text = re.sub(r"_(.*?)_", r"\1", text)  # _italic_
+        # Markdown bold/italic
+        text = re.sub(r"\*\*(.*?)\*\*", r"\1", text)
+        text = re.sub(r"\*(.*?)\*", r"\1", text)
+        text = re.sub(r"_(.*?)_", r"\1", text)
 
-        # Удаляем "ботовые" фразы
+        # Удаление лишних фраз от бота
         text = re.sub(r"(Привет!|Здравствуйте!|Я рад помочь|Я бот|Вот решение|Как я понял)[^\n]*", "", text, flags=re.IGNORECASE)
 
-        # Урезаем длинные списки вида "(x) = 1, ..." (5+ значений)
+        # Урезаем длинные шаблоны
         text = re.sub(r'(\([^\n]+?\)\s*=\s*[^\n]+?,\s*){5,}', '… и т.д. ', text)
 
         return text.strip()

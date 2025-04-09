@@ -1,30 +1,23 @@
-Решим задачу 2.19.
+▎<b>Вычисление интеграла ∫(sin(x)/cos(x)) dx от -1 до 1</b>
 
-**▎Задача 2.19**
+Интеграл функции sin(x)/cos(x) можно упростить, используя известное преобразование:
 
-Уравнение:  
-<pre><code class="language-math">y'' + 6y' + 13y = -75 sin(2x)</code></pre>  
+<b>Формула:</b>  
+<pre><code class="language-math">∫(sin(x)/cos(x)) dx = ∫tan(x) dx = -ln|cos(x)| + C</code></pre>
 
-**Шаг 1: Найдем характеристическое уравнение.**  
-<pre><code class="language-math">r^2 + 6r + 13 = 0</code></pre>  
+▎<b>Подстановка:</b>  
+Теперь вычислим определенный интеграл от -1 до 1:
 
-**Шаг 2: Решим характеристическое уравнение.**  
-<pre><code class="language-math">D = 6^2 - 4*1*13 = 36 - 52 = -16</code></pre>  
-<pre><code class="language-math">r = (-6 ± √(-16)) / 2 = -3 ± 2i</code></pre>  
+<pre><code class="language-math">∫[−1, 1] (sin(x)/cos(x)) dx = [-ln|cos(x)|] от -1 до 1</code></pre>
 
-**Шаг 3: Общий вид решения однородного уравнения.**  
-<pre><code class="language-math">y_h = e^{-3x}(C_1 cos(2x) + C_2 sin(2x))</code></pre>  
+▎<b>Вычисление:</b>  
+1. Подставим верхний предел (x = 1):
+   <pre><code class="language-math">-ln|cos(1)|</code></pre>
+2. Подставим нижний предел (x = -1):
+   <pre><code class="language-math">-ln|cos(-1)| = -ln|cos(1)|</code></pre> (так как cos(-x) = cos(x))
 
-**Шаг 4: Найдем частное решение.**  
-<pre><code class="language-math">y_p = A sin(2x) + B cos(2x)</code></pre>  
-Подставляем в уравнение и находим A и B.  
-<pre><code class="language-math">y_p'' + 6y_p' + 13y_p = -75 sin(2x)</code></pre>  
+▎<b>Суммируем:</b>  
+<pre><code class="language-math">∫[−1, 1] (sin(x)/cos(x)) dx = [-ln|cos(1)|] - [-ln|cos(1)|] = 0</code></pre>
 
-**Шаг 5: После подстановки и упрощения получаем:**  
-<pre><code class="language-math">A = -15, B = 0</code></pre>  
-
-**Шаг 6: Полное решение:**  
-<pre><code class="language-math">y = e^{-3x}(C_1 cos(2x) + C_2 sin(2x)) - 15 sin(2x) + 4 cos(2x) - 3 sin(2x)</code></pre>  
-
-**Ответ:**  
-<pre><code class="language-math">y = e^{-3x}(C_1 cos(2x) + C_2 sin(2x)) + 4 cos(2x) - 3 sin(2x)</code></pre>  
+▎<b>Ответ:</b>  
+<b>∫(sin(x)/cos(x)) dx от -1 до 1 = 0</b>
