@@ -62,6 +62,7 @@ class BotService:
     def latex_to_image(latex_code, external_id, dpi=300):
         result = ''
         for el in latex_code:
+            el = BotService.clean_latex_output(el)
             result += '$' + el + '$' + '\n'
 
         fig, ax = plt.subplots(figsize=(4, 2))
@@ -752,14 +753,32 @@ class BotService:
         text = re.sub(r"\$\$.*?\$\$", "", text, flags=re.DOTALL)
         text = re.sub(r"\\\(.*?\\\)", "", text, flags=re.DOTALL)
         text = re.sub(r"\\\[.*?\\\]", "", text, flags=re.DOTALL)
-        
-        # Удаляем конструкции вида \frac{...}{...} и другие LaTeX-команды с аргументами
-        text = re.sub(r"\\[a-zA-Z]+\{.*?\}", "", text)  # Удаляет \frac{...}, \text{...}, и т.п.
-        text = re.sub(r"\\[a-zA-Z]+\{.*?\}\{.*?\}", "", text)  # Удаляет \frac{...}{...}
+        text = re.sub(r"\\[a-zA-Z]+\{.*?\}\{.*?\}", "", text)  # Удаляем \frac{...}{...}
+        text = re.sub(r"\\[a-zA-Z]+\{.*?\}", "", text)  # Удаляем \text{...}, \sqrt{...} и т.п.
 
-        # Markdown очистка
-        text = re.sub(r"`{1,3}(.*?)`{1,3}", r"\1", text, flags=re.DOTALL)
-        text = re.sub(r"[*_]{1,3}(.*?)\1", r"\1", text, flags=re.DOTALL)
+        # Удаляем markdown-ссылки и упоминания
+        text = re.sub(r"!\[[^\]]*\]\([^)]+\)", "", text)  # Удаляет изображения ![alt](url)
+        text = re.sub(r"\[[^\]]+\]\([^)]+\)", "", text)   # Удаляет [текст](ссылка)
+
+        # Удаляем спойлеры и двойные подчёркивания/тильды
+        text = re.sub(r"\|\|.*?\|\|", "", text)  # ||spoiler||
+        text = re.sub(r"__([^_]+)__", r"\1", text)  # __underline__
+        text = re.sub(r"~~(.*?)~~", r"\1", text)  # ~~strikethrough~~
+
+        # Удаляем markdown заголовки ##, ### и т.п.
+        text = re.sub(r"^#+\s*", "", text, flags=re.MULTILINE)
+
+        # Удаляем кавычки > и > blockquote
+        text = re.sub(r"^>+\s?", "", text, flags=re.MULTILINE)
+
+        # Очищаем pre/code блоки
+        text = re.sub(r"```[\s\S]*?```", "", text)  # многострочный блок
+        text = re.sub(r"`([^`]*)`", r"\1", text)  # `inline code`
+
+        # Markdown bold/italic, НО сохраняем одиночные '*'
+        text = re.sub(r"\*\*(.*?)\*\*", r"\1", text)  # **bold**
+        text = re.sub(r"(?<!\*)\*(?!\*)([^*]+)(?<!\*)\*(?!\*)", r"\1", text)  # *italic* (не затрагивает одиночные *)
+        text = re.sub(r"_(.*?)_", r"\1", text)  # _italic_
 
         # Удаляем "ботовые" фразы
         text = re.sub(r"(Привет!|Здравствуйте!|Я рад помочь|Я бот|Вот решение|Как я понял)[^\n]*", "", text, flags=re.IGNORECASE)
@@ -769,6 +788,19 @@ class BotService:
 
         return text.strip()
 
+    def clean_latex_output(text: str) -> str:
+        # Удаляем окружения: \begin{align}...\end{align}, \begin{cases}...\end{cases}, и т.д.
+        text = re.sub(r'\\begin\{.*?\}.*?\\end\{.*?\}', '', text, flags=re.DOTALL)
+
+        # Удаляем display-style конструкции: \[ ... \], $$ ... $$
+        text = re.sub(r'\$\$.*?\$\$', '', text, flags=re.DOTALL)
+        text = re.sub(r'\\\[.*?\\\]', '', text, flags=re.DOTALL)
+
+        # Удаляем нумерированные метки вида \tag{1} и комментарии % ...
+        text = re.sub(r'\\tag\{.*?\}', '', text)
+        text = re.sub(r'%.*', '', text)
+
+        return text.strip()
 
     def estimate_tokens(messages, model="gpt-4-1106-preview"):
         encoding = tiktoken.encoding_for_model(model)

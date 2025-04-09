@@ -94,17 +94,27 @@ async def get_photo(message: types.Message, state: FSMContext):
     DocumentTypeFilter(document_types=EASY_EXTENSION_FILES)
 )
 async def get_easy_document(message: types.Message, state: FSMContext):
-    data = await state.get_data()
-    file_content = await BotService.getFileContent(bot, message)
     user = TelegramUserService.GetTelegramUserByExternalId(
         message.from_user.id)
 
+    data = await state.get_data()
+    # Проверка наличия объекта code_helper в состоянии
     default_mode_helper = data.get('default_mode_helper')
 
     if not default_mode_helper:
         default_mode_helper = DefaultModeGPTService(
             external_id=message.from_user.id, language=user.get('language', 'ru'))
         await state.update_data(default_mode_helper=default_mode_helper)
+    if default_mode_helper.check_if_context_limit_reached():
+        await message.reply(
+            text=LocalizationService.BotTexts.GetLimitedContextText(
+                user.get('language', 'ru')),
+            reply_markup=Keyboard.Code_helper_buttons(
+                user.get('language', 'ru'))
+        )
+        return
+        
+    file_content = await BotService.getFileContent(bot, message)
     default_mode_helper.add_file_message(
         file_content=file_content,
         caption=message.caption if message.caption else ''
@@ -127,17 +137,27 @@ async def get_easy_document(message: types.Message, state: FSMContext):
     DocumentTypeFilter(document_types=['doc', 'docx'])
 )
 async def get_docx_document(message: types.Message, state: FSMContext):
-    data = await state.get_data()
-    file_content = await BotService.GetWordFileContent(bot, message)
     user = TelegramUserService.GetTelegramUserByExternalId(
         message.from_user.id)
 
+    data = await state.get_data()
+    # Проверка наличия объекта code_helper в состоянии
     default_mode_helper = data.get('default_mode_helper')
 
     if not default_mode_helper:
         default_mode_helper = DefaultModeGPTService(
             external_id=message.from_user.id, language=user.get('language', 'ru'))
         await state.update_data(default_mode_helper=default_mode_helper)
+    if default_mode_helper.check_if_context_limit_reached():
+        await message.reply(
+            text=LocalizationService.BotTexts.GetLimitedContextText(
+                user.get('language', 'ru')),
+            reply_markup=Keyboard.Code_helper_buttons(
+                user.get('language', 'ru'))
+        )
+        return
+        
+    file_content = await BotService.GetWordFileContent(bot, message)
     default_mode_helper.add_file_message(
         file_content=file_content,
         caption=message.caption if message.caption else 'Вот содержание моего файла'
@@ -159,17 +179,26 @@ async def get_docx_document(message: types.Message, state: FSMContext):
     DocumentTypeFilter(document_types=['pdf'])
 )
 async def get_pdf_document(message: types.Message, state: FSMContext):
-    data = await state.get_data()
-    file_content = await BotService.GetPDFFileContent(bot, message)
     user = TelegramUserService.GetTelegramUserByExternalId(
         message.from_user.id)
 
+    data = await state.get_data()
+    # Проверка наличия объекта code_helper в состоянии
     default_mode_helper = data.get('default_mode_helper')
 
     if not default_mode_helper:
         default_mode_helper = DefaultModeGPTService(
             external_id=message.from_user.id, language=user.get('language', 'ru'))
         await state.update_data(default_mode_helper=default_mode_helper)
+    if default_mode_helper.check_if_context_limit_reached():
+        await message.reply(
+            text=LocalizationService.BotTexts.GetLimitedContextText(
+                user.get('language', 'ru')),
+            reply_markup=Keyboard.Code_helper_buttons(
+                user.get('language', 'ru'))
+        )
+        return
+    file_content = await BotService.GetPDFFileContent(bot, message)
     default_mode_helper.add_file_message(
         file_content=file_content,
         caption=message.caption if message.caption else 'Вот содержание моего файла'
@@ -191,17 +220,26 @@ async def get_pdf_document(message: types.Message, state: FSMContext):
     DocumentTypeFilter(document_types=['xls', 'xlsx'])
 )
 async def get_excel_document(message: types.Message, state: FSMContext):
-    data = await state.get_data()
-    file_content = await BotService.GetExcelFileContentJSON(bot, message)
     user = TelegramUserService.GetTelegramUserByExternalId(
         message.from_user.id)
 
+    data = await state.get_data()
+    # Проверка наличия объекта code_helper в состоянии
     default_mode_helper = data.get('default_mode_helper')
 
     if not default_mode_helper:
         default_mode_helper = DefaultModeGPTService(
             external_id=message.from_user.id, language=user.get('language', 'ru'))
         await state.update_data(default_mode_helper=default_mode_helper)
+    if default_mode_helper.check_if_context_limit_reached():
+        await message.reply(
+            text=LocalizationService.BotTexts.GetLimitedContextText(
+                user.get('language', 'ru')),
+            reply_markup=Keyboard.Code_helper_buttons(
+                user.get('language', 'ru'))
+        )
+        return
+    file_content = await BotService.GetExcelFileContentJSON(bot, message)
     default_mode_helper.add_file_message(
         file_content=file_content,
         caption=message.caption if message.caption else 'Вот содержание моего файла'
@@ -224,13 +262,26 @@ async def get_excel_document(message: types.Message, state: FSMContext):
     ~F.text.startswith('/'),
 )
 async def get_text(message: types.Message, state: FSMContext):
+    user = TelegramUserService.GetTelegramUserByExternalId(
+        message.from_user.id)
+
     data = await state.get_data()
+    # Проверка наличия объекта code_helper в состоянии
     default_mode_helper = data.get('default_mode_helper')
+
     if not default_mode_helper:
         default_mode_helper = DefaultModeGPTService(
-            message.from_user.id, language=data.get('language', 'ru'))
+            external_id=message.from_user.id, language=user.get('language', 'ru'))
         await state.update_data(default_mode_helper=default_mode_helper)
-
+    if default_mode_helper.check_if_context_limit_reached():
+        await message.reply(
+            text=LocalizationService.BotTexts.GetLimitedContextText(
+                user.get('language', 'ru')),
+            reply_markup=Keyboard.Code_helper_buttons(
+                user.get('language', 'ru'))
+        )
+        return
+    
     default_mode_helper.add_message(message.text)
 
     result = await BotService.run_process_with_countdown(

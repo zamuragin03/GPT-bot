@@ -7,8 +7,7 @@ from Config import (client,
 from .LocalizationService import LocalizationService
 from .BotService import BotService
 from .UserActionService import UserActionService
-import re
-import tiktoken
+
 
 
 class DefaultModeGPTService:
@@ -95,7 +94,7 @@ class DefaultModeGPTService:
 
     def add_action(self, response: Completion):
         self.total_tokens_used += response.usage.total_tokens
-        
+
         last_message = list(filter(lambda x: x.get(
             'role') == 'user', self.messages))[-1].get('content')
         if isinstance(last_message, list):
@@ -145,7 +144,9 @@ class DefaultModeGPTService:
             postfix_text = LocalizationService.BotTexts.GetPrefixByName(
                 self.action_type_name, self.language
             )
-
+            with open('text.txt', 'w', encoding='utf-8') as f:
+                f.write(str(response.choices[0].message.content))
+                 
             result_text = BotService.escape_html(
                 BotService.sanitize_response(
                     response.choices[0].message.content)

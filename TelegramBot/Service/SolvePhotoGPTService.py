@@ -57,6 +57,7 @@ class SolvePhotoGPTService:
             action_type_name=self.action_type_name,
             user_external_id=self.user_external_id
         )
+        
 
     async def generate_response(self,):
         response = await client.beta.chat.completions.parse(
